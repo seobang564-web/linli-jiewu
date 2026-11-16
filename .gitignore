@@ -1,0 +1,28 @@
+# OS / IDE
+.DS_Store
+.idea/
+*.iml
+.vscode/
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/captures/
+android/.externalNativeBuild/
+android/.cxx/
+*.apk
+*.aab
+!android/keystore/debug.keystore
+*.jks
+
+# Server
+server/target/
+server/src/main/resources/application-dev.yml
+server/src/main/resources/application-prod.yml
+server/uploads/
+
+# Logs / secrets
+*.log
+.env
