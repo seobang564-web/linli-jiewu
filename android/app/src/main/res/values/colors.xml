@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#236950</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="background">#F5F7F2</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="text_primary">#20352B</color>
+    <color name="text_secondary">#53665C</color>
+    <color name="success">#236950</color>
+    <color name="error">#BA1A1A</color>
+    <color name="item_available">#236950</color>
+    <color name="item_reserved">#996500</color>
+    <color name="item_lent">#276195</color>
+    <color name="item_offline">#68746C</color>
+</resources>

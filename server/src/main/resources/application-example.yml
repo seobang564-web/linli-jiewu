@@ -1,0 +1,12 @@
+# Copy to application-dev.yml locally or /opt/linli/application-prod.yml on Linux.
+# Actual secrets are supplied through environment variables, never committed.
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/linli_jiewu?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&connectTimeout=3000&socketTimeout=5000}
+    username: ${DB_USERNAME:linli}
+    password: ${DB_PASSWORD}
+
+linli:
+  upload-dir: ${UPLOAD_DIR:/opt/linli/uploads}
+  jwt:
+    secret: ${JWT_SECRET}

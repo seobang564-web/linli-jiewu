@@ -14,6 +14,7 @@ android/.externalNativeBuild/
 android/.cxx/
 *.apk
 *.aab
+*.keystore
 !android/keystore/debug.keystore
 *.jks
 
@@ -26,3 +27,10 @@ server/uploads/
 # Logs / secrets
 *.log
 .env
+
+# Local build tools and deliverables
+.tools/
+.artifacts/
+.logs/
+server/deploy/server.env
+server/deploy/application-prod.yml

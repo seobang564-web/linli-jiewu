@@ -1,0 +1,4 @@
+# Copy to local.properties; use forward slashes in Windows SDK paths.
+sdk.dir=D\:/AndroidSdk
+amap.key=
+server.baseUrl=http://10.0.2.2:8080/api/
