@@ -1,5 +1,6 @@
 package com.linlijiewu.app.ui.bootstrap;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import androidx.activity.EdgeToEdge;
@@ -15,6 +16,7 @@ import com.linlijiewu.app.data.remote.ApiResponse;
 import com.linlijiewu.app.data.remote.HelloData;
 import com.linlijiewu.app.data.repository.BootstrapRepository;
 import com.linlijiewu.app.databinding.ActivityMainBinding;
+import com.linlijiewu.app.ui.discover.DiscoverActivity;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -40,6 +42,8 @@ public class MainActivity extends AppCompatActivity {
         repository = new BootstrapRepository(ApiClient.create(BuildConfig.SERVER_BASE_URL, () -> null));
         binding.serverAddress.setText(getString(R.string.server_address, BuildConfig.SERVER_BASE_URL));
         binding.checkConnection.setOnClickListener(view -> checkConnection());
+        binding.openDiscover.setOnClickListener(view ->
+                startActivity(new Intent(this, DiscoverActivity.class)));
     }
 
     private void checkConnection() {
