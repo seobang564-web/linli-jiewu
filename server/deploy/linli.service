@@ -1,0 +1,24 @@
+[Unit]
+Description=Linli Jiewu Server
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=linli
+Group=linli
+WorkingDirectory=/opt/linli
+EnvironmentFile=/etc/linli/server.env
+ExecStart=/usr/bin/java -Xms128m -Xmx512m -Duser.timezone=Asia/Shanghai -jar /opt/linli/app.jar --spring.profiles.active=prod --spring.config.additional-location=file:/opt/linli/
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+SuccessExitStatus=143
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/opt/linli/uploads
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,77 @@
+import groovy.json.JsonOutput
+
+plugins {
+    id 'com.android.application'
+}
+
+def localConfig = new Properties()
+def localConfigFile = rootProject.file('local.properties')
+if (localConfigFile.exists()) {
+    localConfigFile.withInputStream { localConfig.load(it) }
+}
+
+def serverBaseUrl = providers.gradleProperty('serverBaseUrl')
+        .orElse(localConfig.getProperty('server.baseUrl', 'http://10.0.2.2:8080/api/')).get()
+def serverUri = new URI(serverBaseUrl)
+if (!(serverUri.scheme in ['http', 'https']) || !serverUri.host ||
+        serverUri.userInfo || serverUri.query || serverUri.fragment || !serverBaseUrl.endsWith('/')) {
+    throw new GradleException('server.baseUrl 必须是以 / 结尾的 HTTP(S) 地址，不得含凭据、查询或片段。')
+}
+
+android {
+    namespace 'com.linlijiewu.app'
+    compileSdk 35
+    buildToolsVersion '35.0.0'
+
+    defaultConfig {
+        applicationId 'com.linlijiewu.app'
+        minSdk 24
+        targetSdk 35
+        versionCode 1
+        versionName '0.1.0'
+        manifestPlaceholders = [AMAP_KEY: localConfig.getProperty('amap.key', '')]
+        buildConfigField 'String', 'SERVER_BASE_URL', JsonOutput.toJson(serverBaseUrl)
+    }
+
+    signingConfigs {
+        debug {
+            storeFile rootProject.file('keystore/debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    buildFeatures {
+        viewBinding true
+        buildConfig true
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.1'
+    implementation 'androidx.activity:activity:1.10.1'
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'com.squareup.retrofit2:retrofit:2.11.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.11.0'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    implementation 'com.github.bumptech.glide:glide:4.16.0'
+
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+}

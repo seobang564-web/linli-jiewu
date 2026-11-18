@@ -1,0 +1,41 @@
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+  error:
+    include-message: never
+    include-stacktrace: never
+
+spring:
+  application:
+    name: linli-jiewu
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/linli_jiewu?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&connectTimeout=3000&socketTimeout=5000}
+    username: ${DB_USERNAME:linli}
+    password: ${DB_PASSWORD:}
+    hikari:
+      connection-init-sql: SET time_zone = '+08:00'
+      maximum-pool-size: 5
+      minimum-idle: 0
+      connection-timeout: 3000
+      initialization-fail-timeout: -1
+  sql:
+    init:
+      mode: never
+  jackson:
+    time-zone: Asia/Shanghai
+    serialization:
+      write-dates-as-timestamps: false
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+
+linli:
+  upload-dir: ${UPLOAD_DIR:./uploads}
+  jwt:
+    secret: ${JWT_SECRET:}
+    expires-in-seconds: 604800

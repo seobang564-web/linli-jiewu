@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">邻里借物地图</string>
+    <string name="bootstrap_title">邻里好物，借来用用</string>
+    <string name="bootstrap_description">发现附近闲置，让物品流动起来。</string>
+    <string name="connection_title">服务连接</string>
+    <string name="server_address">服务器：%1$s</string>
+    <string name="check_connection">检查服务连接</string>
+    <string name="connection_empty">点击按钮，检查是否能连接邻里借物服务。</string>
+    <string name="connection_loading">正在连接服务器…</string>
+    <string name="connection_success">连接成功\n%1$s</string>
+    <string name="connection_failed">连接失败，请确认服务器地址、网络及 8080 端口后重试。</string>
+    <string name="connection_server_error">服务暂不可用，请稍后重试。</string>
+    <string name="bootstrap_footer">发现、发布、借还与聊天页面将在后续迭代接入。</string>
+</resources>
