@@ -24,8 +24,10 @@ import com.amap.api.maps.AMap;
 import com.amap.api.maps.CameraUpdateFactory;
 import com.amap.api.maps.MapView;
 import com.amap.api.maps.model.LatLng;
+import com.amap.api.maps.model.MarkerOptions;
 import com.amap.api.maps.model.MyLocationStyle;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.linlijiewu.app.BuildConfig;
 import com.linlijiewu.app.R;
 import com.linlijiewu.app.databinding.FragmentDiscoverBinding;
 import com.linlijiewu.app.util.AmapPrivacy;
@@ -149,6 +151,11 @@ public class DiscoverFragment extends Fragment {
         if (map == null) {
             return;
         }
+        LatLng mock = mockLocation();
+        if (mock != null) {
+            useMockLocation(mock);
+            return;
+        }
         showState(State.LOCATING, null);
         hasCentered = false;
         MyLocationStyle style = new MyLocationStyle()
@@ -160,6 +167,27 @@ public class DiscoverFragment extends Fragment {
         map.setMyLocationStyle(style);
         map.setMyLocationEnabled(false);
         map.setMyLocationEnabled(true);
+    }
+
+    /** 本机 local.properties 配置的调试坐标；未配置或非 debug 包时返回 null。 */
+    @Nullable
+    private static LatLng mockLocation() {
+        if (!BuildConfig.DEBUG || BuildConfig.MOCK_LOCATION.isEmpty()) {
+            return null;
+        }
+        String[] parts = BuildConfig.MOCK_LOCATION.split(",");
+        return new LatLng(Double.parseDouble(parts[0]), Double.parseDouble(parts[1]));
+    }
+
+    /** 不调用高德定位，直接把固定坐标当作当前位置（海外无法使用高德网络定位时调试用）。 */
+    private void useMockLocation(LatLng mock) {
+        map.setMyLocationEnabled(false);
+        map.getUiSettings().setMyLocationButtonEnabled(false);
+        map.clear();
+        map.addMarker(new MarkerOptions().position(mock).title(getString(R.string.location_mock_marker)));
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(mock, DEFAULT_ZOOM));
+        hasCentered = true;
+        showState(State.LOCATED, null);
     }
 
     private void onMyLocationChanged(Location location) {
