@@ -24,7 +24,7 @@
             android:name="com.amap.api.location.APSService"
             android:exported="false" />
         <activity
-            android:name=".ui.bootstrap.MainActivity"
+            android:name=".ui.main.HomeActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -32,8 +32,8 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".ui.discover.DiscoverActivity"
+            android:name=".ui.bootstrap.MainActivity"
             android:exported="false"
-            android:label="@string/discover_title" />
+            android:label="@string/connection_title" />
     </application>
 </manifest>
