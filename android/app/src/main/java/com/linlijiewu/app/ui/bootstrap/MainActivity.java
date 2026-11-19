@@ -16,7 +16,7 @@ import com.linlijiewu.app.data.remote.ApiResponse;
 import com.linlijiewu.app.data.remote.HelloData;
 import com.linlijiewu.app.data.repository.BootstrapRepository;
 import com.linlijiewu.app.databinding.ActivityMainBinding;
-import com.linlijiewu.app.ui.discover.DiscoverActivity;
+import com.linlijiewu.app.ui.main.HomeActivity;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
         binding.serverAddress.setText(getString(R.string.server_address, BuildConfig.SERVER_BASE_URL));
         binding.checkConnection.setOnClickListener(view -> checkConnection());
         binding.openDiscover.setOnClickListener(view ->
-                startActivity(new Intent(this, DiscoverActivity.class)));
+                startActivity(new Intent(this, HomeActivity.class)));
     }
 
     private void checkConnection() {
