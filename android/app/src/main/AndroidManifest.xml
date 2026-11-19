@@ -35,5 +35,9 @@
             android:name=".ui.bootstrap.MainActivity"
             android:exported="false"
             android:label="@string/connection_title" />
+        <activity
+            android:name=".ui.detail.ItemDetailActivity"
+            android:exported="false"
+            android:label="@string/detail_title" />
     </application>
 </manifest>
