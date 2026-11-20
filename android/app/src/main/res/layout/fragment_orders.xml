@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical">
+
+    <FrameLayout
+        android:id="@+id/tabBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_bottom_line"
+        android:elevation="1dp">
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <TextView android:id="@+id/tabBorrower" style="@style/OrderTab" android:text="@string/orders_borrower" />
+            <TextView android:id="@+id/tabOwner" style="@style/OrderTab" android:text="@string/orders_owner" />
+        </LinearLayout>
+
+        <View android:id="@+id/tabIndicator" android:layout_width="64dp" android:layout_height="3dp" android:layout_gravity="bottom" android:background="@drawable/bg_tab_line" />
+    </FrameLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="120dp"
+        android:scrollbars="none">
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical">
+            <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:clipToPadding="false" android:paddingStart="14dp" android:paddingTop="12dp" android:paddingEnd="14dp" android:paddingBottom="14dp" android:scrollbars="none">
+                <LinearLayout android:id="@+id/filterRow" android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal" />
+            </HorizontalScrollView>
+
+            <LinearLayout android:id="@+id/list" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+
+            <include layout="@layout/view_watermark" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>

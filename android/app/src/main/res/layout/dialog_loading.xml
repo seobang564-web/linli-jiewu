@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:id="@+id/loadingCard"
+        android:layout_width="160dp"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_ld_card"
+        android:elevation="12dp"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingTop="22dp"
+        android:paddingBottom="20dp">
+
+        <FrameLayout
+            android:layout_width="120dp"
+            android:layout_height="100dp">
+
+            <View
+                android:id="@+id/loadingShadow"
+                android:layout_width="40dp"
+                android:layout_height="7dp"
+                android:layout_gravity="bottom|center_horizontal"
+                android:layout_marginBottom="6dp"
+                android:background="@drawable/bg_shadow_ellipse" />
+
+            <ImageView
+                android:id="@+id/loadingSpeed"
+                android:layout_width="16dp"
+                android:layout_height="30dp"
+                android:layout_gravity="center_vertical|start"
+                android:layout_marginStart="6dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/mascot_speed" />
+
+            <ImageView
+                android:id="@+id/loadingMascot"
+                android:layout_width="96dp"
+                android:layout_height="96dp"
+                android:layout_gravity="center_horizontal"
+                android:importantForAccessibility="no"
+                android:src="@drawable/mascot_run" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/loadingText"
+            style="@style/T"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:accessibilityLiveRegion="polite"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:id="@+id/loadingDots"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="9dp"
+            android:orientation="horizontal">
+
+            <View android:layout_width="5dp" android:layout_height="5dp" android:background="@drawable/bg_dot" />
+            <View android:layout_width="5dp" android:layout_height="5dp" android:layout_marginStart="5dp" android:background="@drawable/bg_dot" />
+            <View android:layout_width="5dp" android:layout_height="5dp" android:layout_marginStart="5dp" android:background="@drawable/bg_dot" />
+        </LinearLayout>
+    </LinearLayout>
+</FrameLayout>

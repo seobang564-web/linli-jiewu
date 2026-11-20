@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<set xmlns:android="http://schemas.android.com/apk/res/android"
+    android:duration="520" android:interpolator="@interpolator/ease_out_expo">
+    <translate android:fromYDelta="18dp" android:toYDelta="0" />
+    <alpha android:fromAlpha="0" android:toAlpha="1" />
+</set>

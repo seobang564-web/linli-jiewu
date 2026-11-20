@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:orientation="horizontal"
+    android:paddingStart="16dp"
+    android:paddingTop="14dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="14dp"
+    android:stateListAnimator="@animator/press_sink">
+
+    <ImageView
+        android:id="@+id/thumb"
+        android:layout_width="86dp"
+        android:layout_height="86dp"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView android:id="@+id/title" style="@style/T.Title" android:layout_width="match_parent" android:layout_height="wrap_content" android:lineSpacingMultiplier="1.2" />
+
+        <LinearLayout android:id="@+id/tags" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="7dp" android:orientation="horizontal" />
+
+        <TextView android:id="@+id/desc" style="@style/T.Sub" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="7dp" android:ellipsize="end" android:maxLines="1" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView android:id="@+id/distance" style="@style/T" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            <TextView android:id="@+id/status" style="@style/T.Pill" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:visibility="gone" />
+            <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+            <TextView
+                android:id="@+id/borrow"
+                android:layout_width="34dp"
+                android:layout_height="34dp"
+                android:background="@drawable/bg_circle_ink"
+                android:gravity="center"
+                android:stateListAnimator="@animator/press_scale"
+                android:text="@string/browse_borrow"
+                android:textColor="@color/surface"
+                android:textSize="14sp" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

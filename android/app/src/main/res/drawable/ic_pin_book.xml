@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 由 docs/ui-prototype.html 的线性图标生成 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="18dp" android:height="18dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path android:pathData="M12 6.4c-2-1.4-5-1.9-8-1.4v13.6c3-.5 6 0 8 1.4 2-1.4 5-1.9 8-1.4V5c-3-.5-6 0-8 1.4zM12 6.4V20" android:strokeColor="#FFFFFFFF" android:strokeWidth="1.9" android:strokeLineCap="round" android:strokeLineJoin="round" />
+    <path android:pathData="M17.9,3a1.5,1.5 0,1 0,3,0a1.5,1.5 0,1 0,-3,0" android:fillColor="@color/olive" android:strokeColor="#FFFFFFFF" android:strokeWidth="1.9" android:strokeLineCap="round" android:strokeLineJoin="round" />
+</vector>

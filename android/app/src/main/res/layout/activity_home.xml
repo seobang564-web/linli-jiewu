@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 主框架：四个 Tab 页 + 底部导航（中间为凸起的发布按钮） -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background">
+
+    <FrameLayout
+        android:id="@+id/tabContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <FrameLayout
+        android:id="@+id/navBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:clipChildren="false"
+        android:clipToPadding="false">
+
+        <LinearLayout
+            android:id="@+id/navRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_nav"
+            android:orientation="horizontal"
+            android:paddingTop="34dp"
+            android:paddingBottom="6dp">
+
+            <LinearLayout android:id="@+id/navDiscover" style="@style/NavItem">
+                <ImageView android:id="@+id/navDiscoverIcon" style="@style/NavIcon" android:src="@drawable/ic_nav_map" />
+                <TextView android:id="@+id/navDiscoverText" style="@style/NavText" android:text="@string/nav_discover" />
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/navOrders" style="@style/NavItem">
+                <ImageView android:id="@+id/navOrdersIcon" style="@style/NavIcon" android:src="@drawable/ic_nav_order" />
+                <TextView android:id="@+id/navOrdersText" style="@style/NavText" android:text="@string/nav_orders" />
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/navPublishSlot" style="@style/NavItem">
+                <View android:layout_width="26dp" android:layout_height="26dp" />
+                <TextView style="@style/NavText" android:text="@string/nav_publish" />
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/navMessages" style="@style/NavItem">
+                <FrameLayout android:layout_width="wrap_content" android:layout_height="wrap_content">
+                    <ImageView android:id="@+id/navMessagesIcon" style="@style/NavIcon" android:src="@drawable/ic_nav_chat" />
+                    <TextView
+                        android:id="@+id/navBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="18dp"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="-6dp"
+                        android:layout_marginEnd="-12dp"
+                        android:background="@drawable/bg_badge"
+                        android:gravity="center"
+                        android:minWidth="18dp"
+                        android:paddingStart="5dp"
+                        android:paddingEnd="5dp"
+                        android:text="3"
+                        android:textColor="@color/surface"
+                        android:textSize="11sp" />
+                </FrameLayout>
+                <TextView android:id="@+id/navMessagesText" style="@style/NavText" android:text="@string/nav_messages" />
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/navProfile" style="@style/NavItem">
+                <ImageView android:id="@+id/navProfileIcon" style="@style/NavIcon" android:src="@drawable/ic_nav_user" />
+                <TextView android:id="@+id/navProfileText" style="@style/NavText" android:text="@string/nav_profile" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/navPublish"
+            android:layout_width="58dp"
+            android:layout_height="58dp"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_circle_olive"
+            android:contentDescription="@string/nav_publish"
+            android:elevation="8dp"
+            android:outlineSpotShadowColor="@color/olive"
+            android:src="@drawable/ic_plus_white"
+            android:stateListAnimator="@animator/press_scale" />
+    </FrameLayout>
+</FrameLayout>

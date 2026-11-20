@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 交接点小地图的示意底图（详情页静态展示，点导航按钮再打开地图） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="390dp" android:height="160dp" android:viewportWidth="390" android:viewportHeight="160">
+    <path android:fillColor="#EFEDE6" android:pathData="M0,0h390v160h-390z" />
+    <path android:fillColor="#D5E6EE" android:pathData="M0,130C80,110 140,150 230,138S360,115 390,125V160H0z" />
+    <path android:fillColor="#DCE9C8" android:pathData="M30,14h90a10,10 0,0 1,10 10v36a10,10 0,0 1,-10 10h-90a10,10 0,0 1,-10 -10v-36a10,10 0,0 1,10 -10z" />
+    <path android:fillColor="#DCE9C8" android:pathData="M262,74h96a10,10 0,0 1,10 10v20a10,10 0,0 1,-10 10h-96a10,10 0,0 1,-10 -10v-20a10,10 0,0 1,10 -10z" />
+    <path android:strokeColor="#E2DED3" android:strokeWidth="20" android:strokeLineCap="round" android:pathData="M-10,92L400,70M200,-10L215,170" />
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="14" android:strokeLineCap="round" android:pathData="M-10,92L400,70M200,-10L215,170" />
+    <path android:strokeColor="#FBFAF6" android:strokeWidth="6" android:strokeLineCap="round" android:pathData="M60,0L80,160M320,0L305,160M0,36L390,26" />
+</vector>
