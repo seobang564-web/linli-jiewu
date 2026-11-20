@@ -8,7 +8,6 @@
     <style name="T.Big">
         <item name="android:textSize">34sp</item>
         <item name="android:fontFamily">sans-serif-light</item>
-        <item name="android:textFontWeight">300</item>
         <item name="android:letterSpacing">0.03</item>
     </style>
     <style name="T.En">

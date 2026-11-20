@@ -8,7 +8,7 @@ public interface HealthMapper {
     // WHERE 1 = 0 verifies table access without reading business rows.
     @Select("""
             SELECT COUNT(*)
-            FROM users, items, borrows, borrow_logs, conversations, messages
+            FROM users, images, items, borrows, borrow_logs, conversations, messages
             WHERE 1 = 0
             """)
     int verifySchema();

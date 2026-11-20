@@ -17,6 +17,7 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.LinliJiewu">
+        <activity android:name=".ui.item.MyItemsActivity" android:exported="false" />
         <meta-data
             android:name="com.amap.api.v2.apikey"
             android:value="${AMAP_KEY}" />

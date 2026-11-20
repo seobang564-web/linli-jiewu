@@ -10,3 +10,6 @@ spring:
     init:
       mode: always
       schema-locations: classpath:schema-test.sql
+linli:
+  jwt:
+    secret: dGVzdC1vbmx5LXNlY3JldC1mb3ItbG9jYWwtdGVzdHMtMzItYnl0ZXM=

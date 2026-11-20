@@ -18,10 +18,14 @@ import com.linlijiewu.app.ui.common.Motion;
 import com.linlijiewu.app.ui.common.Session;
 import com.linlijiewu.app.ui.common.Ui;
 import com.linlijiewu.app.ui.main.HomeActivity;
+import com.linlijiewu.app.ui.item.MyItemsActivity;
+import com.linlijiewu.app.data.remote.*;
+import retrofit2.Call;
 
 /** 个人中心（GET /users/me、GET /users/me/items）：三项数字概览、功能宫格、两张线稿卡片。 */
 public class ProfileFragment extends Fragment {
     private FragmentProfileBinding binding;
+    private Call<?> activeCall;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle state) {
@@ -37,11 +41,12 @@ public class ProfileFragment extends Fragment {
         binding.avatar.setText(nick.isEmpty() ? "邻" : nick.substring(0, 1));
         binding.nickname.setText(nick);
         binding.meta.setText(loggedIn ? "@" + Session.username(requireContext()) + " · 楠苑" : getString(R.string.profile_guest_meta));
-        binding.weekCount.setText(getString(R.string.profile_week, 128));
+        binding.weekCount.setText(R.string.profile_real_session);
+        binding.findItem.setOnClickListener(v -> MyItemsActivity.openId(requireContext()));
         binding.edit.setOnClickListener(v -> Ui.comingSoon(requireContext()));
         binding.statIn.setOnClickListener(v -> openOrders());
         binding.statOut.setOnClickListener(v -> openOrders());
-        binding.statItems.setOnClickListener(v -> Ui.comingSoon(requireContext()));
+        binding.statItems.setOnClickListener(v -> openMine());
         binding.guide.setOnClickListener(v -> Ui.comingSoon(requireContext()));
         binding.pact.setOnClickListener(v -> Ui.comingSoon(requireContext()));
         binding.logout.setOnClickListener(v -> {
@@ -76,6 +81,8 @@ public class ProfileFragment extends Fragment {
                     openOrders();
                 } else if (label == R.string.profile_f_server) {
                     startActivity(new Intent(requireContext(), MainActivity.class));
+                } else if (label == R.string.profile_f_items) {
+                    openMine();
                 } else {
                     Ui.comingSoon(requireContext());
                 }
@@ -88,10 +95,37 @@ public class ProfileFragment extends Fragment {
         startActivity(HomeActivity.intent(requireContext(), HomeActivity.TAB_ORDERS));
     }
 
+    private void openMine() {
+        startActivity(Session.isLoggedIn(requireContext()) ? new Intent(requireContext(), MyItemsActivity.class)
+                : new Intent(requireContext(), AuthActivity.class).putExtra("relogin", true));
+    }
+
+    @Override public void onResume() { super.onResume(); refreshAccount(); }
+
+    private void refreshAccount() {
+        if (binding == null) { return; }
+        boolean loggedIn = Session.isLoggedIn(requireContext());
+        String nick = loggedIn ? Session.nickname(requireContext()) : getString(R.string.profile_guest);
+        binding.nickname.setText(nick);
+        binding.avatar.setText(nick.isEmpty() ? "" : nick.substring(0, 1));
+        binding.meta.setText(loggedIn ? "@" + Session.username(requireContext()) : getString(R.string.profile_guest_meta));
+        binding.statItemsValue.setText("0");
+        binding.statInValue.setText(R.string.stats_pending); binding.statOutValue.setText(R.string.stats_pending);
+        if (activeCall != null) { activeCall.cancel(); }
+        if (loggedIn) {
+            var call = ApiClient.authenticated(requireContext()).mine(1, 1); activeCall = call;
+            call.enqueue(new ApiCallback<>(requireActivity(), data -> {
+                if (binding != null) { binding.statItemsValue.setText(Long.toString(data.total)); }
+            }, message -> {
+                if (binding != null) {
+                    binding.statItemsValue.setText(R.string.stats_pending);
+                    if (!Session.isLoggedIn(requireContext())) { binding.nickname.setText(R.string.profile_guest); }
+                }
+            }, () -> { }));
+        }
+    }
+
     private void animateIn() {
-        Motion.countUp(binding.statItemsValue, 6, 300);
-        Motion.countUp(binding.statInValue, 1, 300);
-        Motion.countUp(binding.statOutValue, 2, 300);
         Motion.stagger(binding.content, 60);
         if (Motion.enabled(requireContext())) {
             binding.bannerArt.setTranslationY(Ui.dp(requireContext(), 24));
@@ -108,14 +142,13 @@ public class ProfileFragment extends Fragment {
     public void onHiddenChanged(boolean hidden) {
         super.onHiddenChanged(hidden);
         if (!hidden && binding != null) {
-            Motion.countUp(binding.statItemsValue, 6, 120);
-            Motion.countUp(binding.statInValue, 1, 120);
-            Motion.countUp(binding.statOutValue, 2, 120);
+            refreshAccount();
         }
     }
 
     @Override
     public void onDestroyView() {
+        if (activeCall != null) { activeCall.cancel(); }
         binding = null;
         super.onDestroyView();
     }

@@ -14,7 +14,7 @@ package_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 cd -- "$package_dir"
 sha256sum --check SHA256SUMS
 
-for tool in python3 openssl curl systemctl; do
+for tool in python3 openssl curl systemctl mysql; do
     if ! command -v "$tool" >/dev/null; then
         echo "缺少 $tool；请先安装对应 Ubuntu 软件包。" >&2
         exit 1
@@ -27,6 +27,13 @@ if [[ ! -x "$java_bin" ]] || ! "$java_bin" -version 2>&1 | grep -q 'version "17\
 fi
 if ! systemctl is-active --quiet mysql; then
     echo 'MySQL 尚未运行，请先检查 sudo systemctl status mysql。' >&2
+    exit 1
+fi
+
+# Validate the additive migration before replacing the running application's JAR.
+if ! mysql --batch --skip-column-names -e \
+    'SELECT image_id, owner_id, file_name, size_bytes, created_at FROM linli_jiewu.images LIMIT 0' >/dev/null; then
+    echo '图片表未就绪或当前 root 无法通过 MySQL socket 核验。请先执行 sudo mysql < 002_images.sql，并确认数据库访问权限。现有 JAR 未替换。' >&2
     exit 1
 fi
 
@@ -104,7 +111,7 @@ echo 'Hello 接口：'
 curl --fail --silent --show-error --max-time 8 http://127.0.0.1:8080/api/hello
 printf '\n数据库健康检查：\n'
 if ! curl --fail-with-body --silent --show-error --max-time 8 http://127.0.0.1:8080/api/health; then
-    printf '\n数据库检查失败：确认 linli 的密码、权限和六张表。可用 --configure 重填密码；无需重新建表。\n' >&2
+    printf '\n数据库检查失败：确认 linli 的密码、权限和七张表（含 images）。可用 --configure 重填密码；无需重新建表。\n' >&2
     exit 1
 fi
 printf '\n部署成功。还需从本机验证公网访问，并在腾讯云防火墙放行 TCP 8080。\n'

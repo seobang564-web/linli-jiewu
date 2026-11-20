@@ -15,6 +15,17 @@ CREATE TABLE users (
     UNIQUE KEY uk_users_username (username)
 ) ENGINE=InnoDB;
 
+CREATE TABLE images (
+    image_id       VARCHAR(64)  NOT NULL PRIMARY KEY,
+    owner_id       BIGINT       NOT NULL,
+    file_name      VARCHAR(100) NOT NULL,
+    size_bytes     BIGINT       NOT NULL,
+    created_at     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_images_file_name (file_name),
+    KEY idx_images_owner (owner_id),
+    CONSTRAINT fk_images_owner FOREIGN KEY (owner_id) REFERENCES users (id)
+) ENGINE=InnoDB;
+
 CREATE TABLE items (
     id               BIGINT        NOT NULL AUTO_INCREMENT PRIMARY KEY,
     owner_id         BIGINT        NOT NULL,

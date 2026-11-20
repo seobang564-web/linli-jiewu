@@ -31,6 +31,10 @@
             <ImageButton android:id="@+id/edit" style="@style/CircleBtn.Field" android:contentDescription="@string/cd_edit" android:src="@drawable/ic_edit" />
         </LinearLayout>
 
+        <com.google.android.material.button.MaterialButton android:id="@+id/findItem" style="@style/Btn.Outline"
+            android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="18dp"
+            android:layout_marginEnd="18dp" android:text="@string/item_open_id" />
+
         <LinearLayout style="@style/Card" android:gravity="center_vertical" android:orientation="horizontal" android:paddingTop="22dp" android:paddingBottom="22dp">
             <LinearLayout android:id="@+id/statItems" style="@style/Stat">
                 <TextView android:id="@+id/statItemsValue" style="@style/StatValue" />
