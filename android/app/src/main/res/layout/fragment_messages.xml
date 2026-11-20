@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:clipToPadding="false"
+    android:paddingBottom="120dp"
+    android:scrollbars="none">
+
+    <LinearLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingStart="22dp" android:paddingTop="8dp" android:paddingEnd="22dp" android:paddingBottom="16dp">
+            <TextView style="@style/T.Big" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/messages_title" android:textSize="30sp" />
+            <TextView style="@style/T.En" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/messages_title_en" />
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/notice" style="@style/Card" android:gravity="center_vertical" android:orientation="horizontal" android:padding="16dp" android:stateListAnimator="@animator/press_sink">
+            <ImageView android:layout_width="46dp" android:layout_height="46dp" android:background="@drawable/bg_circle_olive_soft" android:importantForAccessibility="no" android:padding="11dp" android:src="@drawable/ic_bell" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                    <TextView style="@style/T.Title" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/messages_notice" android:textSize="15sp" />
+                    <TextView style="@style/T.Sub" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/messages_notice_time" android:textSize="12sp" />
+                </LinearLayout>
+                <TextView style="@style/T.Sub" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="@string/messages_notice_text" android:textSize="13sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout android:id="@+id/list" style="@style/Card" android:orientation="vertical" android:paddingTop="4dp" android:paddingBottom="4dp" />
+
+        <include layout="@layout/view_watermark" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

@@ -1,0 +1,631 @@
+<meta charset="utf-8">
+<title>邻里借物原型</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Outfit:wght@300;400;500;600&display=swap">
+<style>
+/* 布局：左侧页面目录 + 右侧单台手机交互；可切到“全部页面”网格总览。
+   视觉：橄榄绿主色、带小圆点的线性图标、大号细体中文标题配英文副标题、白色大圆角卡片、深灰药丸按钮。 */
+:root{
+  --olive:#6A8A14; --olive-deep:#4F6A0A; --olive-soft:#EEF3DD; --lime:#E5F0C4; --lime-ink:#5B7A0E;
+  --ink:#2C2C2A; --ink-2:#55554F; --sub:#9B9B94; --line:#ECECE6; --bg:#F6F6F2; --card:#FFFFFF;
+  --coral:#E2664F; --coral-line:#F1C6B4; --coral-ink:#C2613E; --amber-bg:#FFF2DD; --amber:#C27A12;
+  --page:#E8EAE1; --panel-ink:#33332F;
+  --f-cn:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  --f-num:"Outfit","Noto Sans SC",sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--f-cn);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+a{color:inherit;text-decoration:none}
+.app{display:grid;grid-template-columns:300px 1fr;gap:24px;min-height:100%;padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:1280px;margin:0 auto}
+.panel{display:flex;flex-direction:column;gap:18px;min-width:0}
+.brand{display:flex;align-items:center;gap:12px}
+.brand h1{margin:0;font-weight:300;font-size:26px;letter-spacing:1px;color:var(--olive-deep)}
+.brand p{margin:2px 0 0;font-family:var(--f-num);color:var(--sub);font-size:13px;letter-spacing:.5px}
+.mode{display:flex;background:var(--card);border-radius:999px;padding:4px}
+.mode button{flex:1;border:0;background:none;padding:8px 0;border-radius:999px;font-size:13px;color:var(--ink-2)}
+.mode button.on{background:var(--olive);color:#fff}
+.toc{display:flex;flex-direction:column;gap:14px}
+.toc h3{margin:0 0 6px;font-size:11px;letter-spacing:2px;color:var(--sub);font-weight:500}
+.toc a{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:9px 12px;border-radius:12px;color:var(--panel-ink);text-decoration:none;font-size:14px}
+.toc a span{font-family:var(--f-num);font-size:11px;color:var(--sub)}
+.toc a:hover{background:rgba(255,255,255,.6)}
+.toc a.on{background:var(--card);color:var(--olive-deep);font-weight:500}
+.note{background:var(--card);border-radius:16px;padding:14px 16px;font-size:12.5px;line-height:1.7;color:var(--ink-2)}
+.note b{color:var(--ink);font-weight:500}
+.note code{font-family:ui-monospace,Menlo,monospace;font-size:11.5px;background:var(--olive-soft);color:var(--olive-deep);padding:1px 5px;border-radius:5px}
+.stage{display:flex;justify-content:center;align-items:flex-start;min-width:0}
+.phone-wrap{position:relative}
+.phone{width:390px;height:844px;border-radius:46px;background:var(--bg);box-shadow:0 0 0 10px #1d1d1b,0 30px 60px -20px rgba(40,50,10,.35);overflow:hidden;position:relative;transform-origin:top left}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:28px 20px;min-width:0}
+.gcell{display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer}
+.gcell .mini{width:234px;height:506px;position:relative}
+.gcell .phone{position:absolute;top:0;left:0;transform:scale(.6);box-shadow:0 0 0 8px #1d1d1b}
+.gcell .cap{font-size:13px;color:var(--panel-ink)}
+.gcell .cap span{font-family:var(--f-num);color:var(--sub);margin-left:6px;font-size:11px}
+@media (max-width:820px){.app{grid-template-columns:1fr}.toc{display:none}}
+
+/* ---------- 手机内部 ---------- */
+.scr{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--bg);font-size:14px}
+.sb{height:48px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 34px;font-family:var(--f-num);font-weight:600;font-size:15px;position:relative;z-index:5}
+.sb .r{display:flex;gap:6px;align-items:center}
+.body{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;position:relative}
+.body::-webkit-scrollbar{display:none}
+.ic{fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic .ac{stroke:var(--olive);fill:var(--card)}
+.ic .fl{fill:currentColor;stroke:none}
+.top{display:flex;align-items:center;gap:10px;padding:4px 18px 10px;flex:none}
+.top h2{margin:0;flex:1;text-align:center;font-size:18px;font-weight:500}
+.cbtn{width:36px;height:36px;border-radius:50%;border:0;background:var(--card);display:grid;place-items:center;color:var(--ink);flex:none}
+.cbtn.ghost{background:transparent}
+.capsule{display:flex;align-items:center;gap:14px;background:rgba(255,255,255,.85);border:1px solid var(--line);border-radius:999px;padding:6px 12px;height:32px}
+.capsule i{width:1px;height:16px;background:var(--line)}
+.card{background:var(--card);border-radius:22px}
+.pad{padding:18px}
+.sec{margin:0 14px 12px}
+.h-big{font-weight:300;font-size:34px;letter-spacing:1px;margin:0;line-height:1.15}
+.h-en{font-family:var(--f-num);font-weight:300;color:var(--sub);font-size:14px;letter-spacing:.5px}
+.lbl{display:flex;align-items:baseline;gap:8px;margin-bottom:12px}
+.lbl b{font-size:16px;font-weight:500}
+.lbl span{font-family:var(--f-num);font-size:12px;color:var(--sub);font-weight:300}
+.pill{display:inline-flex;align-items:center;gap:4px;border-radius:999px;font-size:12px;padding:3px 10px;white-space:nowrap}
+.p-lime{background:var(--lime);color:var(--lime-ink);border:1px solid #D2E3A3}
+.p-amber{background:var(--amber-bg);color:var(--amber)}
+.p-gray{background:#F0F0EC;color:#8A8A84}
+.p-red{background:#FDECE8;color:var(--coral)}
+.tag{display:inline-block;border:1px solid var(--coral-line);color:var(--coral-ink);background:#FFF8F4;border-radius:999px;font-size:11.5px;padding:2px 9px;white-space:nowrap}
+.btn{border:0;border-radius:999px;height:46px;padding:0 22px;font-size:15px;font-weight:500;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.b-olive{background:var(--olive);color:#fff}
+.b-dark{background:var(--ink);color:#fff}
+.b-out{background:var(--card);color:var(--ink);border:1px solid #DCDCD5}
+.b-sm{height:34px;font-size:13.5px;padding:0 16px}
+.num{font-family:var(--f-num)}
+.muted{color:var(--sub)}
+.row{display:flex;align-items:center;gap:10px}
+.sp{flex:1}
+.div{height:1px;background:var(--line);margin:0 18px}
+.thumb{border-radius:18px;display:grid;place-items:center;flex:none;color:#6d6d66}
+.t-olive{background:#EEF3DD}.t-peach{background:#FBEDE3}.t-sky{background:#E6EFF4}.t-sand{background:#F4EEDB}.t-rose{background:#F7E8EA}
+.bar{flex:none;background:var(--card);border-top:1px solid var(--line);padding:10px 16px 26px;display:flex;gap:10px}
+/* 底部导航 */
+.nav{flex:none;height:86px;background:var(--card);display:grid;grid-template-columns:repeat(5,1fr);padding:8px 6px 0;position:relative;z-index:4;box-shadow:0 -8px 24px -14px rgba(60,70,20,.22)}
+.nav::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:36px;background:linear-gradient(to top,var(--card),rgba(255,255,255,0));pointer-events:none}
+.nav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;color:#9a9a93;cursor:pointer}
+.nav a.on{color:var(--olive)}
+.nav .pub{position:relative}
+.nav .pub span{width:58px;height:58px;border-radius:50%;background:var(--olive);display:grid;place-items:center;color:#fff;margin-top:-20px;box-shadow:0 10px 20px -8px rgba(80,110,10,.6),inset 0 -3px 0 rgba(0,0,0,.08)}
+/* 地图 */
+.map{position:relative;overflow:hidden;background:#EFEDE6}
+.map svg.base{position:absolute;inset:0;width:100%;height:100%}
+.pin{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center}
+.pin .h{width:34px;height:34px;border-radius:50% 50% 50% 4px;transform:rotate(-45deg);background:var(--olive);display:grid;place-items:center;box-shadow:0 4px 10px -3px rgba(60,80,0,.5);border:2px solid #fff}
+.pin .h svg{transform:rotate(45deg);color:#fff}
+.pin.gray .h{background:#A8A89F}
+.pin.big .h{width:42px;height:42px}
+.pin .lab{background:var(--card);border-radius:10px;padding:4px 10px;font-size:12px;margin-bottom:6px;white-space:nowrap;box-shadow:0 4px 12px -4px rgba(0,0,0,.18)}
+.me{position:absolute;width:18px;height:18px;border-radius:50%;background:#3E8EF7;border:3px solid #fff;box-shadow:0 0 0 8px rgba(62,142,247,.18);transform:translate(-50%,-50%)}
+.radius{position:absolute;border-radius:50%;border:1.5px dashed rgba(106,138,20,.7);background:rgba(106,138,20,.07);transform:translate(-50%,-50%)}
+.attr{position:absolute;left:12px;bottom:10px;font-size:10px;color:#8b8a82;font-family:var(--f-num)}
+/* 输入 */
+.field{display:flex;flex-direction:column;gap:6px;padding:14px 0;border-bottom:1px solid var(--line)}
+.field:last-child{border-bottom:0}
+.field label{font-size:13px;color:var(--ink-2)}
+.field input,.field textarea{border:0;outline:0;font:inherit;font-size:15px;color:var(--ink);background:transparent;padding:0;resize:none}
+.field input::placeholder,.field textarea::placeholder{color:#BDBDB5}
+.hint{font-size:11.5px;color:var(--sub)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 14px;font-size:13px;color:var(--ink-2);display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.chip.on{border-color:var(--olive);color:var(--olive-deep);background:var(--olive-soft)}
+.chip.dark.on{background:var(--olive);color:#fff}
+.tabs{display:flex;border-bottom:1px solid var(--line);background:var(--card)}
+.tabs a{flex:1;text-align:center;padding:12px 0 14px;font-size:18px;color:#B2B2AA;position:relative;cursor:pointer}
+.tabs a.on{color:var(--ink);font-weight:500}
+.tabs a.on::after{content:"";position:absolute;left:50%;bottom:-1px;width:64px;height:3px;background:var(--ink);transform:translateX(-50%);border-radius:2px}
+.contour{background:linear-gradient(180deg,rgba(229,240,196,.95),rgba(255,255,255,0) 78%),var(--card);position:relative;overflow:hidden}
+.contour::before{content:"";position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='140' viewBox='0 0 360 140'%3E%3Cg fill='none' stroke='%236A8A14' stroke-opacity='.16' stroke-width='1'%3E%3Cpath d='M-10 70c40-30 80-40 120-20s70 30 110 0 90-40 150-10'/%3E%3Cpath d='M-10 90c40-30 90-36 130-16s70 28 110-2 90-34 140-6'/%3E%3Cpath d='M-10 50c50-26 80-34 120-16s70 24 110-4 100-38 150-14'/%3E%3Cpath d='M-10 110c50-24 90-30 130-12s80 22 120-6 80-26 130-4'/%3E%3Cpath d='M-10 30c40-20 90-26 130-10s70 18 110-6 100-30 140-12'/%3E%3C/g%3E%3C/svg%3E") top center/100% auto no-repeat;pointer-events:none}
+.contour>*{position:relative}
+.wm{text-align:center;color:#DADAD2;padding:26px 0 30px}
+.wm b{display:block;font-size:30px;letter-spacing:6px;font-weight:700}
+.wm span{font-family:var(--f-num);font-size:18px;font-weight:600;letter-spacing:1px}
+.bubble{max-width:72%;padding:10px 14px;border-radius:18px;font-size:14.5px;line-height:1.55}
+.bub-me{background:var(--olive);color:#fff;border-bottom-right-radius:6px;margin-left:auto}
+.bub-you{background:var(--card);border-bottom-left-radius:6px}
+.av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:15px;color:#fff;flex:none;font-weight:500}
+.sys{align-self:center;background:#EDEEE7;color:var(--ink-2);font-size:12px;border-radius:999px;padding:5px 12px;display:flex;gap:6px;align-items:center}
+.dot{width:6px;height:6px;border-radius:50%;background:#55B34A;display:inline-block}
+.badge{min-width:18px;height:18px;border-radius:9px;background:var(--coral);color:#fff;font-size:11px;font-family:var(--f-num);display:grid;place-items:center;padding:0 5px}
+.step{display:flex;justify-content:space-between;position:relative;margin-top:18px}
+.step::before{content:"";position:absolute;left:16px;right:16px;top:7px;height:2px;background:var(--line)}
+.step .fillbar{position:absolute;left:16px;top:7px;height:2px;background:var(--olive)}
+.step div{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11.5px;color:var(--sub);position:relative;width:52px}
+.step i{width:16px;height:16px;border-radius:50%;background:var(--card);border:2px solid var(--line)}
+.step .done i{background:var(--olive);border-color:var(--olive)}
+.step .cur i{border-color:var(--olive);box-shadow:0 0 0 4px var(--lime)}
+.step .done,.step .cur{color:var(--ink)}
+.corner{position:absolute;top:0;right:0;width:0;height:0;border-top:38px solid var(--olive);border-left:38px solid transparent;border-top-right-radius:18px}
+/* 网络请求加载层：变暗背景 + 白色卡片 + 跳动的线性定位针 */
+.loading{position:absolute;inset:0;z-index:50;background:rgba(30,36,14,.45);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);display:grid;place-items:center;animation:ld-fade .2s ease-out}
+.ld-card{width:156px;padding:26px 0 20px;background:var(--card);border-radius:28px;display:flex;flex-direction:column;align-items:center;box-shadow:0 20px 40px -16px rgba(0,0,0,.35)}
+.ld-stage{width:72px;height:70px;position:relative}
+.ld-pin{position:absolute;left:50%;top:2px;margin-left:-20px;animation:ld-bounce 1.1s cubic-bezier(.45,0,.55,1) infinite}
+.ld-shadow{position:absolute;left:50%;bottom:6px;width:26px;height:6px;margin-left:-13px;border-radius:50%;background:rgba(44,44,42,.14);animation:ld-shadow 1.1s cubic-bezier(.45,0,.55,1) infinite}
+.ld-ring{position:absolute;left:50%;bottom:3px;width:48px;height:12px;margin-left:-24px;border-radius:50%;border:1.5px solid var(--olive);animation:ld-ring 1.1s ease-out infinite}
+.ld-txt{margin-top:12px;font-size:14px;color:var(--ink)}
+.ld-dots{display:flex;gap:5px;margin-top:9px}
+.ld-dots i{width:5px;height:5px;border-radius:50%;background:var(--olive);animation:ld-dot 1.1s infinite}
+.ld-dots i:nth-child(2){animation-delay:.18s}.ld-dots i:nth-child(3){animation-delay:.36s}
+@keyframes ld-fade{from{opacity:0}to{opacity:1}}
+@keyframes ld-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes ld-shadow{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.55);opacity:.5}}
+@keyframes ld-ring{0%{transform:scale(.4);opacity:0}15%{opacity:.9}100%{transform:scale(1.5);opacity:0}}
+@keyframes ld-dot{0%,100%{opacity:.25}40%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.ld-pin,.ld-shadow,.ld-ring,.ld-dots i{animation:none}.ld-ring{opacity:.4}}
+/* ---------- 交互反馈 ---------- */
+.btn,.chip,.cbtn,.nav a svg,.nav .pub span,.capsule{transition:scale .22s cubic-bezier(.34,1.45,.64,1),background-color .25s,border-color .25s,color .25s,filter .25s}
+.btn:active,.chip:active,.cbtn:active,.capsule:active{scale:.94}
+.nav a:active svg{scale:.86}.nav .pub:active span{scale:.88}
+a[data-go].row,a[data-go].card,.sec>a[data-go],a[data-go][style*="display:flex"],a[data-set]{transition:scale .25s cubic-bezier(.22,1,.36,1),background-color .25s}
+a[data-go].row:active,a[data-go].card:active,.sec>a[data-go]:active,a[data-go][style*="display:flex"]:active{scale:.98}
+.b-olive,.b-dark{position:relative;overflow:hidden;isolation:isolate}
+.b-olive::after,.b-dark::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.32) 50%,transparent 65%);translate:-120% 0;z-index:-1;pointer-events:none}
+.b-olive:hover::after,.b-dark:hover::after{transition:translate .9s cubic-bezier(.22,1,.36,1);translate:120% 0}
+.b-olive:hover,.b-dark:hover{filter:brightness(1.06)}
+.tabs a.on::after{animation:tab-line .45s cubic-bezier(.22,1,.36,1)}
+@keyframes tab-line{from{width:0;opacity:0}to{width:64px;opacity:1}}
+.chip.on{box-shadow:0 4px 12px -6px rgba(106,138,20,.6)}
+.gcell .mini{transition:translate .45s cubic-bezier(.22,1,.36,1),filter .45s}
+.gcell:hover .mini{translate:0 -8px;filter:drop-shadow(0 18px 20px rgba(60,70,20,.18))}
+.toc a{transition:background-color .25s,color .25s,padding .3s cubic-bezier(.22,1,.36,1)}
+.toc a:hover{padding-left:16px}
+.mode button{transition:background-color .3s,color .3s}
+.pin .h{transition:scale .3s cubic-bezier(.34,1.45,.64,1)}
+.pin:hover .h{scale:1.12}
+.me::after{content:"";position:absolute;inset:-3px;border-radius:50%;border:2px solid #3E8EF7;animation:me-pulse 2s ease-out infinite}
+@keyframes me-pulse{from{transform:scale(1);opacity:.8}to{transform:scale(3.2);opacity:0}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important}.me::after,.tabs a.on::after{animation:none}}
+/* 吉祥物「小邻」：圆滚滚的绿色团子，头顶的小圆点呼应图标上的橄榄小圆点 */
+.mc{overflow:visible;display:block;margin:0 auto}
+.mc .mc-all,.mc .mc-sp,.mc .mc-f1,.mc .mc-f2,.mc .mc-eyes,.mc .mc-spd path,.mc .mc-tw,.mc .mc-drop,.mc .mc-q,.mc .mc-mag,.mc .mc-sh{transform-box:view-box}
+.mc .mc-eyes{transform-origin:50px 56px;animation:mc-blink 3.6s infinite}
+.mc .mc-sp{transform-origin:50px 34px;animation:mc-sway 1.4s ease-in-out infinite}
+.mc-run .mc-all{transform-origin:50px 86px;animation:mc-hop .5s ease-in-out infinite}
+.mc-run .mc-sh{transform-origin:50px 90px;animation:mc-shrink .5s ease-in-out infinite}
+.mc-run .mc-f1{animation:mc-step .5s ease-in-out infinite}
+.mc-run .mc-f2{animation:mc-step .5s ease-in-out -.25s infinite}
+.mc-run .mc-spd path{animation:mc-speed .6s linear infinite}
+.mc-run .mc-spd path:nth-child(2){animation-delay:-.2s}.mc-run .mc-spd path:nth-child(3){animation-delay:-.4s}
+.mc-ok .mc-all{transform-origin:50px 86px;animation:mc-jump 1s cubic-bezier(.3,0,.4,1) infinite}
+.mc-ok .mc-sh{transform-origin:50px 90px;animation:mc-shrink2 1s cubic-bezier(.3,0,.4,1) infinite}
+.mc-ok .mc-tw{transform-origin:center;transform-box:fill-box;animation:mc-tw 1s ease-in-out infinite}
+.mc-ok .mc-tw+.mc-tw{animation-delay:-.5s}
+.mc-err .mc-all{transform-origin:50px 86px;animation:mc-wob 1.6s ease-in-out infinite}
+.mc-err .mc-drop{animation:mc-drop 1.6s ease-in infinite}
+.mc-empty .mc-q{animation:mc-bob 1.2s ease-in-out infinite}
+.mc-empty .mc-mag{transform-origin:66px 74px;animation:mc-scan 2.4s ease-in-out infinite}
+@keyframes mc-blink{0%,90%,100%{transform:scaleY(1)}94%{transform:scaleY(.1)}}
+@keyframes mc-sway{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+@keyframes mc-hop{0%,100%{transform:translateY(0) scale(1.04,.96)}50%{transform:translateY(-7px) scale(.98,1.03)}}
+@keyframes mc-shrink{0%,100%{transform:scale(1)}50%{transform:scale(.7);opacity:.6}}
+@keyframes mc-step{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes mc-speed{0%{transform:translateX(4px);opacity:0}30%{opacity:.8}100%{transform:translateX(-8px);opacity:0}}
+@keyframes mc-jump{0%,100%{transform:translateY(0) scale(1.05,.95)}15%{transform:translateY(0) scale(1.08,.9)}50%{transform:translateY(-14px) scale(.96,1.05)}}
+@keyframes mc-shrink2{0%,15%,100%{transform:scale(1)}50%{transform:scale(.6);opacity:.5}}
+@keyframes mc-tw{0%,100%{transform:scale(.5) rotate(0);opacity:.4}50%{transform:scale(1.15) rotate(20deg);opacity:1}}
+@keyframes mc-wob{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+@keyframes mc-drop{0%{transform:translateY(-3px);opacity:0}25%{opacity:1}100%{transform:translateY(6px);opacity:0}}
+@keyframes mc-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes mc-scan{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(8deg)}}
+@media (prefers-reduced-motion:reduce){.mc *{animation:none!important}}
+.corner+svg{position:absolute;top:4px;right:4px;color:#fff}
+</style>
+
+<div class="app">
+  <aside class="panel">
+    <div class="brand">
+      <div id="logo"></div>
+      <div><h1>邻里借物</h1><p>Linli · Borrow nearby</p></div>
+    </div>
+    <div class="mode"><button id="m-one" class="on">单屏交互</button><button id="m-all">全部页面</button></div>
+    <nav class="toc" id="toc"></nav>
+    <div class="note" id="note"></div>
+  </aside>
+  <main class="stage" id="stage">
+    <div class="phone-wrap" id="pw"><div class="phone" id="phone"></div></div>
+  </main>
+</div>
+
+<script>
+/* ========== 图标：线性 + 橄榄小圆点 ========== */
+const P = {
+  tool:'<path d="M14.6 6.2a4 4 0 0 0-5.2 5.2L4.3 16.5a1.6 1.6 0 0 0 2.3 2.3l5.1-5.1a4 4 0 0 0 5.2-5.2l-2.4 2.4-2.2-.4-.4-2.2z"/><circle class="ac" cx="19" cy="4.6" r="1.7"/>',
+  luggage:'<rect x="6" y="7.5" width="12" height="12" rx="2.2"/><path d="M9.5 7.5V4.8h5v2.7M10 11v5M14 11v5"/><circle class="ac" cx="9" cy="21.2" r="1.1"/><circle class="ac" cx="15" cy="21.2" r="1.1"/>',
+  camping:'<path d="M3 20 12 5l9 15M2 20h20M9.6 20 12 14.4l2.4 5.6"/><circle class="ac" cx="19" cy="5.5" r="1.8"/>',
+  sports:'<circle cx="12" cy="12.5" r="8"/><path d="M4 12.5h16M12 4.5c3 3 3 13 0 16M12 4.5c-3 3-3 13 0 16"/><circle class="ac" cx="20" cy="4.2" r="1.7"/>',
+  electronics:'<rect x="3" y="7.5" width="18" height="12.5" rx="2.6"/><path d="M8 7.5 9.4 4.8h5.2L16 7.5"/><circle cx="12" cy="13.6" r="3.4"/><circle class="ac" cx="17.6" cy="10.4" r="1"/>',
+  book:'<path d="M12 6.4c-2-1.4-5-1.9-8-1.4v13.6c3-.5 6 0 8 1.4 2-1.4 5-1.9 8-1.4V5c-3-.5-6 0-8 1.4zM12 6.4V20"/><circle class="ac" cx="19.4" cy="3" r="1.5"/>',
+  other:'<path d="M12 3.5 19.5 7.7v8.6L12 20.5l-7.5-4.2V7.7zM4.5 7.7 12 12l7.5-4.3M12 12v8.5"/><circle class="ac" cx="12" cy="3.5" r="1.4"/>',
+  search:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/>',
+  pin:'<path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle class="ac" cx="12" cy="10" r="2.2"/>',
+  locate:'<circle cx="12" cy="12" r="6.5"/><circle class="fl" cx="12" cy="12" r="2.4"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/>',
+  map:'<path d="M3.5 6.5 9 4.5l6 2 5.5-2v13l-5.5 2-6-2-5.5 2z"/><path d="M9 4.5v13M15 6.5v13"/><circle class="ac" cx="19.5" cy="4" r="1.6"/>',
+  order:'<rect x="5" y="3.5" width="14" height="17" rx="1.8"/><path d="M8.5 8h4M8.5 12h7M8.5 16h3"/><circle class="ac" cx="16.5" cy="16" r="1.7"/>',
+  chat:'<path d="M4.5 6.5a2.5 2.5 0 0 1 2.5-2.5h10a2.5 2.5 0 0 1 2.5 2.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 3.5V16H7a2.5 2.5 0 0 1-2.5-2.5z"/><circle class="ac" cx="12" cy="10" r="1.5"/>',
+  user:'<circle cx="11" cy="8.5" r="4"/><path d="M3.5 20.5c.8-4 3.8-6 7.5-6s6.7 2 7.5 6"/><circle class="ac" cx="19" cy="4.5" r="1.8"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  back:'<path d="m14.5 5-7 7 7 7"/>',
+  close:'<path d="m6 6 12 12M18 6 6 18"/>',
+  more:'<circle class="fl" cx="6" cy="12" r="1.7"/><circle class="fl" cx="12" cy="12" r="2.1"/><circle class="fl" cx="18" cy="12" r="1.7"/>',
+  phone:'<path d="M6.5 4h3l1.5 4-2 1.3a10 10 0 0 0 5.7 5.7l1.3-2 4 1.5v3a2 2 0 0 1-2.2 2A16 16 0 0 1 4.5 6.2 2 2 0 0 1 6.5 4z"/>',
+  nav:'<path d="M20.5 3.5 3.5 10.6l7 2.9 2.9 7z"/>',
+  star:'<path d="m12 4 2.4 5 5.4.7-4 3.7 1 5.4L12 16.2 7.2 18.8l1-5.4-4-3.7 5.4-.7z"/>',
+  copy:'<rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+  clock:'<circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/>',
+  cam:'<path d="M4 8.5a2 2 0 0 1 2-2h2l1.5-2h5L16 6.5h2a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><circle cx="12" cy="12.5" r="3.4"/><circle class="ac" cx="17" cy="9.5" r="1"/>',
+  check:'<path d="m5 12.5 4.5 4.5L19 7.5"/>',
+  right:'<path d="m9.5 6 6 6-6 6"/>',
+  down:'<path d="m6 9.5 6 6 6-6"/>',
+  bell:'<path d="M6.5 16.5V11a5.5 5.5 0 0 1 11 0v5.5l1.5 2h-14zM10 20.5h4"/><circle class="ac" cx="18" cy="5" r="1.7"/>',
+  draft:'<path d="M5 4h9.5L19 8.5V20H5z"/><path d="M14.5 4v4.5H19M8.5 13h7M8.5 16.5h4.5"/><circle class="ac" cx="17" cy="16.5" r="1.4"/>',
+  history:'<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9"/><path d="M4.5 4.5V9H9M12 8v4l2.8 1.8"/>',
+  shield:'<path d="M12 3.5 19 6v5.6c0 4.3-3 7.6-7 9-4-1.4-7-4.7-7-9V6z"/><path d="m9 12 2.2 2.2L15.5 10"/>',
+  in:'<path d="M14 4.5h4.5v15H14"/><path d="M4 12h10M10.5 8 14 12l-3.5 4"/><circle class="ac" cx="19" cy="4" r="1.5"/>',
+  out:'<path d="M10 4.5H5.5v15H10"/><path d="M10 12h10M16.5 8 20 12l-3.5 4"/><circle class="ac" cx="5" cy="20" r="1.5"/>',
+  card:'<rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><circle cx="9" cy="11" r="2"/><path d="M6 15.5c.6-1.4 1.7-2 3-2s2.4.6 3 2M14 10h3.5M14 13h2.5"/><circle class="ac" cx="20" cy="5" r="1.5"/>',
+  gps:'<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="7.5"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2"/><circle class="ac" cx="18" cy="6" r="1.4"/>',
+  speaker:'<path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z"/><path d="M15.5 9.5c.9.9.9 4.1 0 5M18 7.5c2 2 2 7 0 9"/>',
+  edit:'<path d="M5 19h3.5L18.5 9 15 5.5 5 15.5z"/><path d="m13 7.5 3.5 3.5"/>',
+  image:'<rect x="3.5" y="5" width="17" height="14" rx="2.5"/><circle class="ac" cx="9" cy="10" r="1.8"/><path d="m4 17 5-4.5 3.5 3 3-2.5L20 17"/>',
+  filter:'<path d="M4 6h16M7 12h10M10 18h4"/>',
+  send:'<path d="M5 12h12M12 6l6 6-6 6"/>',
+  logo:'',
+  home:'<path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10v9.5h11V10"/><path d="M10 19.5V15h4v4.5"/><circle class="ac" cx="18.5" cy="5" r="1.7"/>'
+};
+const ic=(n,s=22,st='')=>`<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" ${st?`style="${st}"`:''}>${P[n]}</svg>`;
+const LOGO=(s=44)=>`<svg width="${s}" height="${s}" viewBox="0 0 48 48"><circle cx="24" cy="24" r="24" fill="#6A8A14"/><path d="M13 24.5 24 15l11 9.5M16 22.5V34h16V22.5" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="24" cy="27.5" r="3.6" fill="none" stroke="#fff" stroke-width="2.4"/><circle cx="34.5" cy="13.5" r="3" fill="#E5F0C4"/></svg>`;
+
+/* ========== 示例数据（仅原型示意） ========== */
+const CAT={TOOL:['工具','tool'],LUGGAGE:['行李箱包','luggage'],CAMPING:['露营户外','camping'],SPORTS:['运动','sports'],ELECTRONICS:['电子设备','electronics'],BOOK:['书籍','book'],OTHER:['其他','other']};
+const ST={AVAILABLE:['可借','p-lime'],RESERVED:['已预约','p-amber'],LENT:['借出中','p-gray']};
+const ITEMS=[
+ {id:6,t:'《算法导论》第三版',c:'BOOK',d:75,p:'楠苑综合服务中心',s:'AVAILABLE',tone:'t-sand',x:47,y:44,desc:'有少量笔记，课设查资料够用'},
+ {id:4,t:'斯伯丁 7 号篮球',c:'SPORTS',d:128,p:'楠苑篮球场',s:'AVAILABLE',tone:'t-peach',x:38,y:56,desc:'气很足，晚上打球可借'},
+ {id:2,t:'博世电钻套装',c:'TOOL',d:210,p:'楠苑 3 栋楼下',s:'AVAILABLE',tone:'t-sky',x:62,y:36,desc:'含 12 个钻头，装书架挂钩都行'},
+ {id:3,t:'24 寸行李箱',c:'LUGGAGE',d:352,p:'梓苑食堂门口',s:'RESERVED',tone:'t-rose',x:28,y:30,desc:'万向轮，放假回家用'},
+ {id:12,t:'双人帐篷（带防潮垫）',c:'CAMPING',d:486,p:'东门快递站旁',s:'AVAILABLE',tone:'t-olive',x:74,y:62,desc:'牧高笛双人帐，搭过三次，防潮垫一起借。周末去滇池边、捞鱼河露营都合适。还的时候晾干就行。'},
+ {id:5,t:'富士拍立得 mini 12',c:'ELECTRONICS',d:640,p:'图书馆北门',s:'LENT',tone:'t-sky',x:20,y:70,desc:'相纸需自备'},
+ {id:7,t:'铝合金折叠梯',c:'TOOL',d:820,p:'梓苑 1 栋',s:'AVAILABLE',tone:'t-sand',x:84,y:24,desc:'1.5 米，换灯泡用'}
+];
+const item=id=>ITEMS.find(i=>i.id===id);
+const S={screen:'discover',auth:'register',role:'borrower',radius:1000,cat:'ALL',pubCat:'CAMPING',due:3,time:'18:00',poi:0,
+  msgs:[{sys:'今天 20:12'},{me:1,t:'你好，帐篷周六能借吗？想去捞鱼河露营'},{sys:'你提交了借用申请 · 待确认',k:1},{t:'可以的，防潮垫也一起给你'},{sys:'舒煜 接受了申请 · 待交接',k:1},{t:'明天下午 5 点东门快递站见？'},{me:1,t:'好的，到了给你发消息'}]};
+
+/* ========== 公共片段 ========== */
+const sbar=(light)=>`<div class="sb" ${light?'style="color:#fff"':''}><span>9:41</span><span class="r"><svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg><svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" opacity=".4"/><rect x="2.5" y="2.5" width="16" height="8" rx="2" fill="currentColor"/><rect x="25" y="4.5" width="1.6" height="4" rx=".8" fill="currentColor" opacity=".4"/></svg></span></div>`;
+const navbar=on=>{const t=[['discover','发现','map'],['orders','订单','order'],['publish','',''],['messages','消息','chat'],['profile','我的','user']];
+ return `<div class="nav">${t.map(([id,n,i])=>id==='publish'?`<a class="pub" data-go="publish"><span>${ic('plus',28,'stroke-width:2.2')}</span><span style="width:auto;height:auto;background:none;box-shadow:none;margin:2px 0 0;color:#9a9a93;font-size:11.5px">发布</span></a>`:`<a class="${on===id?'on':''}" data-go="${id}">${ic(i,26)}${n}${id==='messages'?'<b class="badge" style="position:absolute;margin:-2px 0 0 26px">3</b>':''}</a>`).join('')}</div>`};
+const thumb=(it,s=72,r=18)=>`<div class="thumb ${it.tone}" style="width:${s}px;height:${s}px;border-radius:${r}px">${ic(CAT[it.c][1],Math.round(s*.5),'stroke-width:1.2')}</div>`;
+const st=s=>`<span class="pill ${ST[s][1]}">${ST[s][0]}</span>`;
+const dist=m=>m<1000?`<span class="num" style="font-size:20px;font-weight:500">${m}</span><span style="font-size:12px;margin-left:1px">m</span>`:`<span class="num" style="font-size:20px;font-weight:500">${(m/1000).toFixed(1)}</span><span style="font-size:12px">km</span>`;
+const hdr=(title,opt={})=>`<div class="top">${opt.close?`<button class="cbtn ghost" data-go="${opt.back||'discover'}">${ic('close')}</button>`:`<button class="cbtn ghost" data-go="${opt.back||'discover'}">${ic('back')}</button>`}<h2>${title}</h2>${opt.right||'<span style="width:36px"></span>'}</div>`;
+
+function mapSvg(){return `<svg class="base" viewBox="0 0 390 460" preserveAspectRatio="xMidYMid slice">
+ <rect width="390" height="460" fill="#EFEDE6"/>
+ <path d="M0 360 C80 330 140 400 230 380 S360 330 390 350 V460 H0z" fill="#D5E6EE"/>
+ <rect x="20" y="40" width="110" height="80" rx="10" fill="#DCE9C8"/><rect x="250" y="250" width="120" height="70" rx="10" fill="#DCE9C8"/><circle cx="150" cy="250" r="34" fill="#DCE9C8"/>
+ <g stroke="#E2DED3" stroke-width="22" fill="none" stroke-linecap="round"><path d="M-10 160 L400 120"/><path d="M200 -10 L230 470"/><path d="M-10 300 Q180 250 400 290"/></g>
+ <g stroke="#FFFFFF" stroke-width="16" fill="none" stroke-linecap="round"><path d="M-10 160 L400 120"/><path d="M200 -10 L230 470"/><path d="M-10 300 Q180 250 400 290"/></g>
+ <g stroke="#FBFAF6" stroke-width="7" fill="none" stroke-linecap="round"><path d="M60 0 L90 460"/><path d="M320 0 L300 460"/><path d="M0 70 L390 50"/><path d="M0 220 L390 200"/><path d="M120 120 L160 300"/></g>
+ <g font-family="Noto Sans SC,sans-serif" font-size="11" fill="#9C9A90"><text x="40" y="84">梓苑</text><text x="250" y="96">楠苑</text><text x="270" y="290">东门</text><text x="128" y="254">图书馆</text><text x="330" y="140" transform="rotate(-6 330 140)">博大路</text><text x="214" y="420" transform="rotate(86 214 420)">文博路</text><text x="40" y="400" fill="#8CAEC0">湖</text></g></svg>`;}
+
+/* ========== 页面 ========== */
+const SCREENS=[
+ {id:'auth',g:'账户',n:'登录 / 注册',en:'Sign in',api:'POST /auth/register · POST /auth/login',note:'浅绿圆形渐变头图做品牌区。注册时 <b>联系方式</b> 为选填，并说明只在订单被接受后对双方可见。游客可以先逛。'},
+ {id:'discover',g:'发现',n:'发现 · 地图',en:'Discover',api:'GET /items?lat&lng&radius&keyword',note:'沿用现有 <b>高德地图与定位</b>，只换外层 UI。半径胶囊对应 <code>radius</code>，地图标记与下方卡片列表联动。'},
+ {id:'browse',g:'发现',n:'分类浏览',en:'Browse',api:'GET /items?category=…',note:'左侧分类、右侧列表，距离做成大号数字，右侧深色圆按钮直接进入申请。'},
+ {id:'detail',g:'发现',n:'物品详情',en:'Item',api:'GET /items/{id} · POST /conversations',note:'交接点卡片带小地图和导航按钮。底部两个按钮：联系物主（创建会话）、申请借用。'},
+ {id:'apply',g:'发现',n:'申请借用',en:'Request',api:'POST /borrows（requestId 幂等）',note:'归还日期 + 时间用胶囊选择，提示 <b>12 小时未确认自动取消</b>。'},
+ {id:'publish',g:'发布',n:'发布闲置',en:'Lend',api:'POST /images · POST /items',note:'单张封面图，提示上传时去除位置信息。SQLite 草稿自动保存，顶部显示保存时间。'},
+ {id:'pickup',g:'发布',n:'选择交接点',en:'Pickup point',api:'高德 POI 搜索 → pickupLat/Lng/Label',note:'地图中心固定大头针，下方地点卡片选中样式带右上角对勾。显示 GCJ-02 坐标。'},
+ {id:'orders',g:'订单',n:'借入 / 借出',en:'Orders',api:'GET /borrows?role=borrower|owner',note:'进行中的订单卡片顶部用等高线渐变带，已结束的为纯白。按钮随状态机变化。'},
+ {id:'order',g:'订单',n:'订单详情',en:'Order',api:'GET /borrows/{id} · /logs · 状态操作',note:'大号状态 + 五步进度条。接受后露出对方联系方式。底部是订单记录时间线。'},
+ {id:'messages',g:'消息',n:'消息列表',en:'Messages',api:'GET /conversations',note:'每个会话以“物品 + 对方”区分，头像右下叠物品缩略图。'},
+ {id:'chat',g:'消息',n:'聊天',en:'Chat',api:'GET/POST /conversations/{id}/messages · WebSocket',note:'顶部钉住物品与订单状态；状态变化以系统消息插入。可以在下方输入框试发消息。'},
+ {id:'loading',g:'通用',n:'加载中',en:'Loading',api:'所有网络请求',note:'请求发出后盖一层变暗遮罩，白色卡片里是吉祥物 <b>小邻</b> 抱着包裹小跑，会眨眼、头顶小圆点会摇。文案随请求变化。在原型里点 <b>登录、半径切换、提交申请、发布</b> 都会出现约 1 秒。'},
+ {id:'mascot',g:'通用',n:'小邻表情包',en:'Mascot',api:'加载 / 成功 / 出错 / 空状态',note:'原创吉祥物「小邻」，四种表情分别用于加载中、操作成功、网络出错、空状态。下方是出错页的示例。'},
+ {id:'profile',g:'我的',n:'个人中心',en:'Me',api:'GET /users/me · GET /users/me/items',note:'三项数字概览 + 功能宫格 + 两张线稿卡片，底部浅色水印。'}
+];
+
+const R={};
+R.auth=()=>{const reg=S.auth==='register';return `<div class="scr" style="background:linear-gradient(180deg,#E3F0BE 0,#F3F8E4 260px,var(--bg) 420px)">
+ <div style="position:absolute;inset:0;overflow:hidden;pointer-events:none"><div style="position:absolute;width:300px;height:300px;border-radius:50%;border:46px solid rgba(255,255,255,.45);right:-90px;top:60px"></div><div style="position:absolute;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,.35);left:-40px;top:-30px"></div></div>
+ ${sbar()}<div class="body" style="padding:0 22px">
+ <div style="padding:30px 4px 0">${LOGO(52)}<h1 class="h-big" style="font-size:42px;color:var(--olive-deep);margin-top:16px;font-weight:400">邻里借物</h1>
+ <div class="row" style="gap:6px;margin-top:8px;color:var(--ink-2)">${ic('pin',18)}<span>附近的闲置，随手借来用</span></div></div>
+ <div style="border-top:1.5px dashed rgba(106,138,20,.35);margin:24px 0 18px"></div>
+ <div class="row" style="gap:26px;margin-bottom:14px;padding-left:4px">${['register','login'].map(k=>`<a data-set="auth:${k}" style="cursor:pointer;font-size:${S.auth===k?20:17}px;font-weight:${S.auth===k?500:400};color:${S.auth===k?'var(--ink)':'var(--sub)'}">${k==='register'?'注册':'登录'}</a>`).join('')}</div>
+ <div class="card" style="padding:4px 20px">
+  <div class="field"><label>用户名</label><input id="f-user" value="fsy01" placeholder="4–20 位字母、数字或下划线"></div>
+  <div class="field"><label>密码</label><input id="f-pw" type="password" value="linli2026" placeholder="6–32 位"></div>
+  ${reg?`<div class="field"><label>昵称</label><input id="f-nick" value="舒煜" placeholder="邻居们看到的名字"></div>
+  <div class="field"><label>联系方式 <span class="muted">选填</span></label><input id="f-contact" placeholder="例如 微信 shuyu_01"><span class="hint row" style="gap:4px">${ic('shield',14)}仅在订单被接受后对双方可见</span></div>`:''}
+ </div>
+ <label class="row" style="gap:8px;margin:16px 4px;font-size:12.5px;color:var(--ink-2)"><span style="width:18px;height:18px;border-radius:50%;background:var(--olive);display:grid;place-items:center;color:#fff">${ic('check',12,'stroke-width:2.6')}</span>我已阅读并同意<span style="color:var(--olive-deep)">《用户协议》《隐私政策》</span></label>
+ <button class="btn b-olive" style="width:100%;height:50px;font-size:16px" data-go="discover" data-load="${reg?'正在注册':'正在登录'}">${reg?'注册并登录':'登录'}</button>
+ <div style="text-align:center;margin:18px 0 30px"><a data-go="discover" style="color:var(--sub);font-size:13px;cursor:pointer">先随便看看 ›</a></div>
+ </div></div>`};
+
+R.discover=()=>{const rs=[500,1000,3000,5000],rl={500:'500m',1000:'1km',3000:'3km',5000:'5km'},rpx={500:120,1000:210,3000:330,5000:430}[S.radius];
+ const vis=ITEMS.filter(i=>i.d<=S.radius);
+ return `<div class="scr"><div class="map" style="position:absolute;left:0;right:0;top:0;height:470px">${mapSvg()}
+ <div class="radius" style="left:50%;top:48%;width:${rpx}px;height:${rpx}px"></div><div class="me" style="left:50%;top:48%"></div>
+ ${vis.map(i=>`<div class="pin ${i.s!=='AVAILABLE'?'gray':''} ${i.id===12?'big':''}" style="left:${i.x}%;top:${i.y+8}%" data-go="detail">${i.id===12?`<div class="lab">双人帐篷 · <b class="num">486</b>m</div>`:''}<div class="h">${ic(CAT[i.c][1],i.id===12?20:16,'stroke:#fff;stroke-width:1.8')}</div></div>`).join('')}
+ <button class="cbtn" style="position:absolute;right:14px;bottom:86px;box-shadow:0 4px 12px -4px rgba(0,0,0,.2)">${ic('locate')}</button>
+ <span class="attr" style="bottom:84px">高德地图</span></div>
+ <div style="position:relative;z-index:3">${sbar()}
+ <div class="row" style="padding:2px 14px 0;gap:10px"><div class="row" style="flex:1;background:var(--card);border-radius:999px;height:44px;padding:0 16px;box-shadow:0 6px 18px -8px rgba(0,0,0,.2);color:var(--sub)">${ic('search',20)}<span style="flex:1">搜一搜：帐篷、电钻、行李箱</span>${ic('filter',20,'color:var(--ink)')}</div></div>
+ <div class="row" style="padding:10px 14px;gap:8px">${rs.map(r=>`<a class="chip ${S.radius===r?'on dark':''}" data-set="radius:${r}" data-load="正在搜索附近" style="box-shadow:0 4px 10px -6px rgba(0,0,0,.2);${S.radius===r?'':'border-color:transparent'}"><span class="num">${rl[r]}</span></a>`).join('')}</div></div>
+ <div class="body" style="margin-top:300px;background:var(--card);border-radius:28px 28px 0 0;box-shadow:0 -10px 30px -18px rgba(0,0,0,.25);z-index:2">
+  <div style="width:38px;height:4px;border-radius:2px;background:#E2E2DC;margin:8px auto 4px"></div>
+  <div class="row" style="padding:12px 20px 14px">
+   <div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:500">云南大学呈贡校区 · 楠苑</div><div style="margin-top:6px"><span class="pill p-lime">${rl[S.radius]} 内 ${vis.length} 件，最近 <b class="num">75</b>m</span></div></div>
+   <a class="muted" style="font-size:13px">切换 ›</a></div>
+  <div class="div"></div>
+  <div style="display:grid;grid-template-columns:1fr 1px 1fr;align-items:center;padding:22px 0 20px">
+   <a data-go="browse" style="text-align:center;cursor:pointer"><div class="h-big" style="font-size:36px">找东西</div><div class="h-en" style="margin-top:4px">Borrow</div></a><i style="height:60px;background:var(--line)"></i>
+   <a data-go="publish" style="text-align:center;cursor:pointer;position:relative"><span class="pill" style="position:absolute;top:-22px;right:26px;background:var(--olive);color:#fff;border-radius:999px 999px 999px 2px">1 分钟发布!</span><div class="h-big" style="font-size:36px">借出去</div><div class="h-en" style="margin-top:4px">Lend</div></a></div>
+  <div class="div"></div>
+  <div style="display:flex;gap:4px;overflow-x:auto;padding:18px 12px 8px;scrollbar-width:none">${Object.entries(CAT).map(([k,[n,i]])=>`<a data-go="browse" style="flex:none;width:72px;display:flex;flex-direction:column;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);cursor:pointer">${ic(i,34,'stroke-width:1.4;color:#4a4a45')}${n}</a>`).join('')}</div>
+  <div class="lbl" style="padding:14px 20px 0;margin:0"><b>离你最近</b><span>Nearest first</span></div>
+  ${vis.slice(0,4).map(i=>`<a data-go="detail" class="row" style="padding:14px 20px;gap:14px;cursor:pointer">${thumb(i,64)}<div style="flex:1;min-width:0"><div style="font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.t}</div><div class="row" style="gap:6px;margin-top:7px"><span class="tag">${i.p}</span>${i.s!=='AVAILABLE'?st(i.s):''}</div></div><div style="text-align:right">${dist(i.d)}</div></a>`).join('')}
+  <div style="height:40px"></div></div>
+ ${navbar('discover')}</div>`};
+
+R.browse=()=>{const cats=[['ALL','全部','home'],...Object.entries(CAT).map(([k,[n,i]])=>[k,n,i])];const list=S.cat==='ALL'?ITEMS:ITEMS.filter(i=>i.c===S.cat);
+ return `<div class="scr">${sbar()}
+ <div style="background:var(--card);border-radius:0 0 26px 26px;padding:2px 18px 16px;flex:none">
+ <div class="row"><button class="cbtn ghost" data-go="discover" style="margin-left:-8px">${ic('back')}</button><span style="font-size:20px;font-weight:500">找东西</span><span style="color:#ccc;margin:0 4px">|</span><a data-go="discover" style="font-size:18px;color:var(--sub);cursor:pointer">地图</a><span class="sp"></span><button class="cbtn" style="border:1px solid var(--line)">${ic('search',20)}</button></div>
+ <div class="row" style="margin-top:10px;gap:8px">${ic('star',22,'color:#B9B9B1')}<span style="font-size:21px;font-weight:500">云南大学呈贡校区</span><span style="width:22px;height:22px;border-radius:50%;border:1.4px solid var(--ink);display:grid;place-items:center">${ic('right',14)}</span></div>
+ <div class="row" style="margin-top:10px;gap:10px;font-size:13.5px;color:var(--ink-2)">半径 <b class="num" style="font-weight:500">1km</b></div>
+ <div class="row" style="margin-top:12px;gap:6px;color:var(--coral);font-size:13.5px">${ic('speaker',20)}新上架：双人帐篷、铝合金折叠梯 ${ic('down',16)}</div></div>
+ <div style="flex:1;display:flex;min-height:0;margin-top:10px">
+  <div style="width:96px;flex:none;overflow-y:auto;scrollbar-width:none">${cats.map(([k,n,i])=>`<a data-set="cat:${k}" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 4px;font-size:13px;cursor:pointer;${S.cat===k?'background:var(--card);color:var(--olive-deep);font-weight:500;box-shadow:inset 3px 0 0 var(--olive)':'color:var(--ink-2)'}">${S.cat===k?`<span style="width:40px;height:40px;border-radius:50%;border:1.5px solid var(--olive);display:grid;place-items:center">${ic(i,22)}</span>`:''}${n}</a>`).join('')}</div>
+  <div class="body" style="background:var(--card);padding:6px 0">
+   <div style="padding:12px 16px 4px;font-size:14px;color:var(--ink-2)">${S.cat==='ALL'?'离你最近':CAT[S.cat][0]}</div>
+   ${list.length?list.map(i=>`<a data-go="detail" style="display:flex;gap:12px;padding:14px 16px;cursor:pointer">${thumb(i,86,43)}<div style="flex:1;min-width:0"><div style="font-size:16px;font-weight:500;line-height:1.3">${i.t}</div><div class="row" style="gap:5px;margin-top:7px;flex-wrap:wrap"><span class="tag">${CAT[i.c][0]}</span><span class="tag">${i.p}</span></div><div class="muted" style="font-size:12.5px;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.desc}</div><div class="row" style="margin-top:6px"><div>${dist(i.d)}</div>${i.s!=='AVAILABLE'?st(i.s):''}<span class="sp"></span>${i.s==='AVAILABLE'?`<span style="width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:14px" data-go="apply">借</span>`:`<span style="width:34px;height:34px;border-radius:50%;background:#E6E6E0;color:#fff;display:grid;place-items:center;font-size:14px">借</span>`}</div></div></a>`).join(''):`<div style="display:flex;flex-direction:column;align-items:center;padding:50px 0;color:var(--sub)">${mascot('empty',100)}<div style="margin-top:10px">附近 1km 暂时没有这类物品</div></div>`}
+  </div></div>${navbar('discover')}</div>`};
+
+R.detail=()=>{const i=item(12);return `<div class="scr"><div style="position:absolute;top:0;left:0;right:0;height:360px;transform-origin:50% 0" class="hero ${i.tone}"><div style="position:absolute;inset:0;display:grid;place-items:center;color:#788062">${ic('camping',180,'stroke-width:.8')}</div>
+ <div style="position:absolute;width:220px;height:220px;border-radius:50%;border:30px solid rgba(255,255,255,.4);right:-70px;top:-50px"></div></div>
+ <div style="position:relative;z-index:2">${sbar()}<div class="row" style="padding:0 16px"><button class="cbtn" data-go="discover">${ic('back')}</button><span class="sp"></span><div class="capsule">${ic('star',18)}<i></i>${ic('more',18)}</div></div></div>
+ <div class="body" style="margin-top:220px;z-index:2;background:var(--bg);border-radius:28px 28px 0 0">
+  <div class="card pad" style="border-radius:28px 28px 22px 22px;padding:22px 20px">
+   <div class="row" style="align-items:flex-start"><h2 style="margin:0;flex:1;font-size:23px;font-weight:500;line-height:1.3">${i.t}</h2>${st(i.s)}</div>
+   <div class="row" style="gap:6px;margin-top:10px"><span class="tag">${CAT[i.c][0]}</span><span class="tag">可当面交接</span></div>
+   <div class="row" style="margin-top:14px;gap:6px;color:var(--ink-2);font-size:13.5px">${ic('pin',18)}距你 <b class="num" style="font-size:18px;font-weight:500;color:var(--ink)">486</b>m · 步行约 7 分钟</div>
+   <p style="margin:14px 0 0;line-height:1.75;color:var(--ink-2);font-size:14.5px">${i.desc}</p></div>
+  <div class="card sec" style="margin-top:12px;padding:18px 18px 16px"><div class="lbl"><b>交接点</b><span>Pickup point</span></div>
+   <div class="map" style="height:110px;border-radius:16px">${mapSvg()}<div class="pin" style="left:62%;top:72%"><div class="h" style="width:28px;height:28px">${ic('camping',14,'stroke:#fff;stroke-width:1.8')}</div></div></div>
+   <div class="row" style="margin-top:14px"><div style="flex:1"><div style="font-size:16px;font-weight:500">东门快递站旁</div><div class="muted" style="font-size:12.5px;margin-top:4px">云南大学呈贡校区东门</div></div><button class="cbtn" style="background:#F2F2EE">${ic('nav',18)}</button></div></div>
+  <div class="card sec row" style="padding:16px 18px"><div class="av" style="background:var(--olive)">舒</div><div style="flex:1"><div style="font-size:15px;font-weight:500">舒煜</div><div class="muted" style="font-size:12px;margin-top:3px">发布于 2026-11-16 · 楠苑</div></div><a data-go="chat" class="muted" style="font-size:13px;cursor:pointer">聊一聊 ›</a></div>
+  <div class="wm"><b>邻里借物</b><span>linli</span></div></div>
+ <div class="bar" style="z-index:3"><button class="btn b-out" style="flex:1" data-go="chat">${ic('chat',20)}联系物主</button><button class="btn b-olive" style="flex:1.6" data-go="apply">申请借用</button></div></div>`};
+
+R.apply=()=>{const i=item(12);const days=[['今天','11-19',0],['明天','11-20',1],['周六','11-21',2],['周日','11-22',3],['下周一','11-23',4]];
+ return `<div class="scr">${sbar()}${hdr('申请借用',{back:'detail'})}<div class="body">
+ <div class="card sec row" style="padding:14px;gap:14px">${thumb(i,64)}<div style="flex:1"><div style="font-size:15px;font-weight:500">${i.t}</div><div class="row" style="gap:6px;margin-top:8px"><span class="tag">${i.p}</span><span class="muted num" style="font-size:12px">486m</span></div></div></div>
+ <div class="card sec pad"><div class="lbl"><b>归还时间</b><span>Return by</span></div>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">${days.map(([a,b,k])=>`<a data-set="due:${k}" style="cursor:pointer;border-radius:14px;padding:10px 0;text-align:center;border:1px solid ${S.due===k?'var(--olive)':'var(--line)'};background:${S.due===k?'var(--olive-soft)':'var(--card)'}"><div style="font-size:13px;color:${S.due===k?'var(--olive-deep)':'var(--ink)'}">${a}</div><div class="num muted" style="font-size:12px;margin-top:2px">${b}</div></a>`).join('')}</div>
+  <div class="chips" style="margin-top:12px">${['12:00','18:00','21:00'].map(t=>`<a class="chip ${S.time===t?'on':''}" data-set="time:${t}"><span class="num">${t}</span></a>`).join('')}<a class="chip">${ic('clock',16)}其他时间</a></div>
+  <div class="row" style="margin-top:14px;font-size:13px;color:var(--ink-2)">${ic('clock',16)}<span>借用约 <b class="num">${S.due||'<1'}</b> 天，${days[S.due][1]} ${S.time} 前归还</span></div></div>
+ <div class="card sec pad"><div class="lbl"><b>给物主留言</b><span>Note</span></div><textarea id="f-note" rows="3" style="width:100%;border:0;outline:0;font:inherit;font-size:14.5px;resize:none;background:#F7F7F3;border-radius:14px;padding:12px">周六去捞鱼河露营，周日晚上就还，会晾干再还。</textarea><div class="hint" style="text-align:right;margin-top:4px"><span class="num">24</span>/200</div></div>
+ <div class="sec" style="background:var(--lime);border-radius:18px;padding:14px 16px;font-size:12.5px;line-height:1.7;color:var(--lime-ink)"><b>提交后</b>，物主需在 <b class="num">12</b> 小时内确认，超时自动取消。双方联系方式会在物主接受后显示。</div>
+ </div><div class="bar"><button class="btn b-olive" style="flex:1;height:50px" data-go="order" data-load="正在提交申请">提交申请</button></div></div>`};
+
+R.publish=()=>`<div class="scr">${sbar()}<div class="top"><button class="cbtn ghost" data-go="discover">${ic('close')}</button><span class="sp"></span><span class="row" style="gap:5px;font-size:12px;color:var(--olive)"><span class="dot" style="background:var(--olive)"></span>草稿已保存 20:41</span></div>
+ <div class="body"><div style="padding:0 22px 18px"><h1 class="h-big">发布闲置</h1><div class="h-en">Lend to your neighbors</div></div>
+ <div class="sec" style="position:relative"><div class="t-olive" style="height:200px;border-radius:22px;display:grid;place-items:center;color:#788062">${ic('camping',110,'stroke-width:.9')}</div>
+  <span class="pill" style="position:absolute;right:12px;bottom:12px;background:rgba(44,44,42,.75);color:#fff;padding:6px 12px">${ic('cam',16)}更换封面</span></div>
+ <div class="hint sec row" style="gap:5px;margin-top:-4px">${ic('shield',14)}jpg / png / webp，≤ 5MB，上传时自动去除照片里的位置信息</div>
+ <div class="card sec" style="padding:2px 18px">
+  <div class="field"><label class="row">标题<span class="sp"></span><span class="hint num">10/50</span></label><input id="f-title" value="双人帐篷（带防潮垫）"></div>
+  <div class="field"><label>分类</label><div class="chips">${Object.entries(CAT).map(([k,[n,i]])=>`<a class="chip ${S.pubCat===k?'on':''}" data-set="pubCat:${k}">${ic(i,16)}${n}</a>`).join('')}</div></div>
+  <div class="field"><label class="row">描述<span class="sp"></span><span class="hint num">58/500</span></label><textarea id="f-desc" rows="3">牧高笛双人帐，搭过三次，防潮垫一起借。周末去滇池边、捞鱼河露营都合适。还的时候晾干就行。</textarea></div>
+  <a class="field" data-go="pickup" style="flex-direction:row;align-items:center;gap:10px;cursor:pointer"><span style="font-size:13px;color:var(--ink-2)">交接点</span><span class="sp"></span>${ic('pin',18)}<span style="font-size:15px">东门快递站旁</span>${ic('right',16,'color:var(--sub)')}</a>
+ </div><div style="height:12px"></div></div>
+ <div class="bar"><button class="btn b-out" style="flex:1">存草稿</button><button class="btn b-olive" style="flex:2" data-go="detail" data-load="正在上传并发布">发布</button></div></div>`;
+
+R.pickup=()=>{const pois=[['东门快递站旁','云南大学呈贡校区东门北侧','120m'],['楠苑 3 栋楼下','楠苑学生公寓 3 栋','260m'],['楠苑综合服务中心','楠苑综合服务中心大楼一层','310m'],['图书馆北门','呈贡校区图书馆','540m']];
+ return `<div class="scr">${sbar()}${hdr('选择交接点',{back:'publish'})}
+ <div class="row" style="padding:0 16px 12px;gap:10px;flex:none"><span style="font-size:16px">昆明市 ›</span><div class="row" style="flex:1;background:#EFEFEA;border-radius:999px;height:40px;padding:0 14px;color:var(--sub)">${ic('search',18)}搜索地点</div></div>
+ <div class="map" style="height:330px;flex:none">${mapSvg()}<div class="pin big" style="left:50%;top:52%"><div class="lab">拖动地图选择交接点</div><div class="h">${ic('pin',20,'stroke:#fff')}</div></div>
+  <span class="pill" style="position:absolute;left:12px;top:12px;background:rgba(255,255,255,.9);color:var(--ink-2);font-family:var(--f-num)">24.82615, 102.85477 · GCJ-02</span>
+  <button class="cbtn" style="position:absolute;right:12px;bottom:12px;box-shadow:0 4px 12px -4px rgba(0,0,0,.2)">${ic('locate')}</button><span class="attr">高德地图</span></div>
+ <div class="body" style="padding-top:12px">${pois.map(([a,b,d],k)=>`<a data-set="poi:${k}" style="display:block;cursor:pointer;margin:0 14px 10px;position:relative;border-radius:18px;padding:16px 18px;${S.poi===k?'background:linear-gradient(120deg,#F3F7E6,#FBFCF6);border:1.5px solid var(--olive)':'background:var(--card);border:1.5px solid transparent'}">${S.poi===k?`<span class="corner"></span>${ic('check',14,'stroke-width:2.6')}`:''}
+  <div class="row"><span style="font-size:16px;font-weight:500">${a}</span><span class="sp"></span><span class="muted num" style="font-size:13px">距离 ${d}</span></div><div class="row muted" style="gap:4px;margin-top:6px;font-size:12.5px">${ic('pin',15)}${b}</div></a>`).join('')}
+ <div class="card sec" style="padding:2px 18px"><div class="field"><label>交接点名称（展示给借用者）</label><input id="f-label" value="${pois[S.poi][0]}"></div></div></div>
+ <div class="bar"><button class="btn b-olive" style="flex:1;height:50px" data-go="publish">确认交接点</button></div></div>`};
+
+const oc=(o)=>`<div class="sec" style="border-radius:22px;overflow:hidden;background:var(--card)"><a data-go="order" style="display:block;cursor:pointer" class="${o.active?'contour':''}"><div style="padding:18px 18px 4px">
+ <div class="row"><span style="font-size:17px;font-weight:500">${o.who}</span><span class="cbtn" style="width:30px;height:30px;background:${o.active?'rgba(255,255,255,.7)':'#F3F3EF'}">${ic('chat',16)}</span><span class="sp"></span><span style="font-size:14px;color:${o.c||'var(--ink)'}">${o.st} ›</span></div>
+ <div class="muted num" style="font-size:12.5px;margin-top:6px">${o.time}</div></div>
+ <div class="row" style="padding:12px 18px;gap:14px">${thumb(item(o.id),64,14)}<div style="flex:1;min-width:0"><div style="font-size:15px">${item(o.id).t}</div><div style="font-size:12.5px;margin-top:6px;color:${o.warn?'var(--coral)':'var(--sub)'}">${o.sub}</div></div></div></a>
+ ${o.btns?`<div class="row" style="justify-content:flex-end;padding:4px 18px 18px;gap:10px">${o.btns}</div>`:''}</div>`;
+R.orders=()=>{const b=S.role==='borrower';const L=b?[
+ {id:12,who:'物主 舒煜',st:'待交接',active:1,time:'2026-11-19 20:12 · 东门快递站旁',sub:'约定 11-22 18:00 前归还',btns:'<button class="btn b-out b-sm">取消借用</button><button class="btn b-dark b-sm">去交接点</button>'},
+ {id:4,who:'物主 子涵',st:'借用中',active:1,time:'2026-11-18 19:30 · 楠苑篮球场',sub:'还剩 1 天 3 小时',btns:'<button class="btn b-out b-sm">联系</button><button class="btn b-dark b-sm">申请归还</button>'},
+ {id:2,who:'物主 骐泽',st:'待确认',active:1,c:'var(--amber)',warn:1,time:'2026-11-19 09:02 · 楠苑 3 栋楼下',sub:'11:42:08 后物主未确认将自动取消',btns:'<button class="btn b-out b-sm">取消申请</button>'},
+ {id:5,who:'物主 召然',st:'已完成',time:'2026-10-28 15:17 · 图书馆北门',sub:'已于 10-30 归还',btns:'<button class="btn b-out b-sm">评价一下</button><button class="btn b-dark b-sm">再借一次</button>'},
+ {id:3,who:'物主 一诺',st:'已取消',c:'var(--sub)',time:'2026-10-20 11:20 · 梓苑食堂门口',sub:'超时未确认，已自动取消'}]:[
+ {id:7,who:'借用者 小林',st:'待确认',active:1,c:'var(--amber)',warn:1,time:'2026-11-19 19:40 · 梓苑 1 栋',sub:'备注：宿舍换灯泡，明早就还',btns:'<button class="btn b-out b-sm">拒绝</button><button class="btn b-dark b-sm">接受</button>'},
+ {id:5,who:'借用者 召然',st:'待验收',active:1,time:'2026-11-15 13:10 · 图书馆北门',sub:'对方已申请归还，请检查物品',btns:'<button class="btn b-out b-sm">验收不通过</button><button class="btn b-dark b-sm">确认归还</button>'},
+ {id:12,who:'借用者 骐泽',st:'待交接',active:1,time:'2026-11-19 20:12 · 东门快递站旁',sub:'当面交给对方后点确认',btns:'<button class="btn b-dark b-sm">确认交接</button>'}];
+ return `<div class="scr">${sbar()}<div class="tabs" style="flex:none">${[['borrower','我借入的'],['owner','我借出的']].map(([k,n])=>`<a class="${S.role===k?'on':''}" data-set="role:${k}">${n}</a>`).join('')}</div>
+ <div class="body" style="padding-top:12px"><div class="chips" style="padding:0 14px 14px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none">${['全部','待确认','待交接','借用中','待验收','已完成'].map((t,k)=>`<a class="chip ${k===0?'on':''}" style="flex:none">${t}</a>`).join('')}</div>${L.map(oc).join('')}<div class="wm"><b>邻里借物</b><span>linli</span></div></div>${navbar('orders')}</div>`};
+
+R.order=()=>{const i=item(12);const steps=['待确认','待交接','借用中','待验收','已完成'];const cur=1;
+ return `<div class="scr">${sbar()}${hdr('订单详情',{back:'orders'})}<div class="body">
+ <div class="sec contour" style="border-radius:22px;padding:26px 18px 20px;text-align:center"><div style="font-size:24px;font-weight:500">待交接</div><div class="muted" style="font-size:13px;margin-top:6px">请在约定时间到交接点，当面交接</div>
+  <div class="row" style="justify-content:center;gap:10px;margin-top:16px"><button class="btn b-dark b-sm" data-go="chat">联系物主</button></div>
+  <div class="step"><span class="fillbar" style="width:${cur/4*100}%;max-width:calc(100% - 32px)"></span>${steps.map((s,k)=>`<div class="${k<cur?'done':k===cur?'cur':''}"><i></i>${s}</div>`).join('')}</div></div>
+ <div class="card sec" style="padding:18px"><div class="row"><div style="flex:1"><div style="font-size:17px;font-weight:500">东门快递站旁</div><div class="muted" style="font-size:12.5px;margin-top:4px">云南大学呈贡校区东门北侧</div></div><button class="cbtn" style="background:#F2F2EE">${ic('phone',18)}</button><button class="cbtn" style="background:#F2F2EE">${ic('nav',18)}</button></div>
+  <div class="row" style="margin-top:14px;background:var(--olive-soft);border-radius:14px;padding:10px 14px;font-size:13.5px"><span class="muted">物主联系方式</span><span class="sp"></span><b style="font-weight:500">微信 shuyu_01</b><span style="color:var(--olive-deep);margin-left:8px">复制</span></div>
+  <div class="row" style="gap:14px;margin-top:16px">${thumb(i,60,14)}<div style="flex:1"><div style="font-size:15px">${i.t}</div><div class="muted" style="font-size:12px;margin-top:5px">${CAT[i.c][0]} · 下单时快照</div></div><span class="num muted">×1</span></div>
+  <div style="height:1px;background:var(--line);margin:16px 0"></div>
+  ${[['约定归还','2026-11-22 18:00'],['申请时间','2026-11-19 20:12:36'],['留言','周六去捞鱼河露营，周日晚上就还'],['订单编号','1024 <span style="color:var(--coral-ink)">复制</span>']].map(([a,b])=>`<div class="row" style="padding:7px 0;font-size:14px;align-items:flex-start"><span class="muted" style="width:76px;flex:none">${a}</span><span class="sp"></span><span class="num" style="text-align:right">${b}</span></div>`).join('')}</div>
+ <div class="card sec" style="padding:18px"><div class="lbl"><b>订单记录</b><span>Timeline</span></div>
+  ${[['物主 舒煜 接受了申请','2026-11-19 20:30',1],['你 提交了借用申请','2026-11-19 20:12',0]].map(([a,b,on])=>`<div class="row" style="align-items:flex-start;gap:12px;padding:6px 0"><span style="width:10px;height:10px;border-radius:50%;margin-top:5px;background:${on?'var(--olive)':'#D5D5CE'}"></span><div><div style="font-size:14px">${a}</div><div class="muted num" style="font-size:12px;margin-top:3px">${b}</div></div></div>`).join('')}</div>
+ <div style="text-align:center;padding:4px 0 10px"><a class="muted" style="font-size:13px">取消借用</a></div><div class="wm"><b>邻里借物</b><span>linli</span></div></div></div>`};
+
+R.messages=()=>{const C=[['舒','#6A8A14','舒煜',12,'明天下午 5 点东门快递站见？','20:31',2],['小','#C2613E','小林',7,'好的，明早 8 点前还你','19:52',1],['召','#5C7EA8','召然',5,'相机已经放回图书馆北门了','昨天',0],['骐','#8A7A4A','骐泽',2,'钻头在盒子第二层','周一',0]];
+ return `<div class="scr">${sbar()}<div style="padding:4px 22px 14px;flex:none"><h1 class="h-big" style="font-size:30px">消息</h1><div class="h-en">Messages</div></div>
+ <div class="body"><a data-go="orders" class="card sec row" style="padding:16px;gap:12px;cursor:pointer"><span class="thumb t-olive" style="width:46px;height:46px;border-radius:50%;color:var(--olive-deep)">${ic('bell',24)}</span><div style="flex:1;min-width:0"><div class="row"><b style="font-weight:500;font-size:15px">订单通知</b><span class="sp"></span><span class="muted num" style="font-size:12px">20:30</span></div><div class="muted" style="font-size:13px;margin-top:4px">舒煜 已接受你的借用申请：双人帐篷</div></div></a>
+ <div class="card sec" style="padding:4px 0">${C.map(([a,c,n,id,m,t,u],k)=>`<a data-go="chat" class="row" style="padding:14px 16px;gap:14px;cursor:pointer;${k?'border-top:1px solid var(--line)':''}"><div style="position:relative"><div class="av" style="background:${c};width:48px;height:48px">${a}</div><div style="position:absolute;right:-6px;bottom:-4px;border:2px solid #fff;border-radius:9px">${thumb(item(id),24,8)}</div></div>
+  <div style="flex:1;min-width:0"><div class="row" style="gap:6px"><b style="font-weight:500;font-size:15px">${n}</b><span class="tag" style="font-size:10.5px;padding:1px 7px;max-width:120px;overflow:hidden;text-overflow:ellipsis">${item(id).t}</span><span class="sp"></span><span class="muted num" style="font-size:12px">${t}</span></div><div class="row" style="margin-top:5px"><span class="muted" style="flex:1;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m}</span>${u?`<span class="badge">${u}</span>`:''}</div></div></a>`).join('')}</div>
+ <div class="wm"><b>邻里借物</b><span>linli</span></div></div>${navbar('messages')}</div>`};
+
+R.chat=()=>{const i=item(12);return `<div class="scr">${sbar()}
+ <div class="top" style="padding-bottom:6px"><button class="cbtn ghost" data-go="messages">${ic('back')}</button><div style="flex:1;text-align:center"><div style="font-size:17px;font-weight:500">舒煜</div><div class="muted" style="font-size:11.5px;margin-top:2px"><span class="dot"></span> 实时连接中</div></div><button class="cbtn ghost">${ic('more')}</button></div>
+ <a data-go="order" class="card row" style="margin:0 14px 6px;padding:12px;gap:12px;flex:none;cursor:pointer">${thumb(i,48,12)}<div style="flex:1;min-width:0"><div class="row" style="gap:6px"><span style="font-size:14px;font-weight:500">${i.t}</span></div><div class="muted" style="font-size:12px;margin-top:4px">待交接 · 11-22 18:00 前归还</div></div><span class="btn b-dark b-sm" style="height:30px;font-size:12.5px;padding:0 12px">查看订单</span></a>
+ <div class="body" id="chatbody" style="display:flex;flex-direction:column;gap:12px;padding:12px 14px">
+  ${S.msgs.map(m=>m.sys?(m.k?`<div class="sys">${ic('order',14)}${m.sys}</div>`:`<div class="muted num" style="text-align:center;font-size:11.5px">${m.sys}</div>`):m.me?`<div class="row" style="align-items:flex-end"><div class="bubble bub-me">${m.t}</div></div>`:`<div class="row" style="align-items:flex-end;gap:8px"><div class="av" style="background:var(--olive);width:32px;height:32px;font-size:13px">舒</div><div class="bubble bub-you">${m.t}</div></div>`).join('')}
+  ${S.typing?`<div class="row typing" style="align-items:flex-end;gap:8px;transform-origin:0 100%"><div class="av" style="background:var(--olive);width:32px;height:32px;font-size:13px">舒</div><div class="bubble bub-you ld-dots" style="margin:0;padding:14px 16px"><i></i><i></i><i></i></div></div>`:''}
+ </div>
+ <form class="row" id="chatform" style="flex:none;background:var(--card);border-top:1px solid var(--line);padding:10px 12px 26px;gap:8px"><button type="button" class="cbtn" style="background:#F2F2EE">${ic('plus')}</button><input id="chatin" autocomplete="off" placeholder="发消息…" style="flex:1;height:40px;border:0;outline:0;background:#F2F2EE;border-radius:999px;padding:0 16px;font:inherit;font-size:14.5px"><button class="cbtn" style="background:var(--olive);color:#fff">${ic('send',20,'stroke-width:2')}</button></form></div>`};
+
+R.profile=()=>`<div class="scr"><div class="body">
+ <div style="height:210px;position:relative;background:linear-gradient(160deg,#E3F0BE,#F4F8E6);overflow:hidden">${sbar()}
+  <svg viewBox="0 0 390 160" style="position:absolute;left:0;right:0;bottom:0;width:100%" fill="none" stroke="#6A8A14" stroke-opacity=".45" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"><path d="M0 150h390"/><path d="M200 150V90l30-24 30 24v60M220 150v-26h20v26"/><path d="M270 150V100l24-18 24 18v50"/><path d="M330 150v-40l20-14 20 14v40"/><circle cx="294" cy="110" r="5"/><path d="M150 150v-22a10 10 0 1 1 20 0v22"/><circle cx="360" cy="40" r="10" fill="#fff" stroke-opacity=".6"/></svg>
+  <div style="position:absolute;left:22px;top:66px"><div style="font-size:12px;color:var(--olive-deep);letter-spacing:1px">本周邻居们借出了 <b class="num" style="font-size:16px">128</b> 次</div><div style="font-size:22px;font-weight:300;color:var(--olive-deep);margin-top:6px">好东西出门串个门，<br>记得回家</div></div></div>
+ <div class="card sec row" style="margin-top:-26px;position:relative;padding:18px;gap:14px"><div class="av" style="background:var(--olive);width:58px;height:58px;font-size:22px;box-shadow:0 0 0 3px var(--olive-soft)">舒</div><div style="flex:1"><div style="font-size:19px;font-weight:500">舒煜</div><div class="muted num" style="font-size:12.5px;margin-top:4px">@fsy01 · 楠苑</div></div><button class="cbtn" style="background:#F2F2EE">${ic('edit',18)}</button></div>
+ <div class="card sec" style="display:grid;grid-template-columns:1fr 1px 1fr 1px 1fr;align-items:center;padding:22px 0">${[['6','我的发布'],['1','借入中'],['2','借出中']].map(([a,b],k)=>`${k?'<i style="height:36px;background:var(--line)"></i>':''}<a data-go="${k?'orders':'profile'}" style="text-align:center;cursor:pointer"><div class="num" style="font-size:30px;font-weight:400" data-count="${a}">${a}</div><div style="font-size:13px;color:var(--ink-2);margin-top:4px">${b}</div></a>`).join('')}</div>
+ <div class="card sec" style="padding:20px 10px 8px"><div style="font-size:17px;font-weight:500;padding:0 12px 16px">我的功能</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);row-gap:22px;padding-bottom:16px">${[['other','我的发布'],['draft','草稿箱'],['in','借入记录'],['out','借出记录'],['card','联系方式'],['history','搜索历史'],['gps','定位权限'],['shield','隐私政策']].map(([i,n])=>`<a style="display:flex;flex-direction:column;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);cursor:pointer" ${n.includes('借')?'data-go="orders"':''}>${ic(i,34,'stroke-width:1.4;color:#4a4a45')}${n}</a>`).join('')}</div></div>
+ <div class="sec" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">${[['使用须知','How it works','<rect x="8" y="10" width="44" height="34" rx="2"/><path d="M30 10v34M14 20h10M14 27h10M36 20h10M36 27h8"/><circle cx="46" cy="38" r="3" stroke="#6A8A14"/>'],['邻里公约','Neighbor pact','<path d="M10 30c6-8 14-8 20 0M30 30c6-8 14-8 20 0"/><circle cx="20" cy="16" r="5"/><circle cx="40" cy="16" r="5"/><path d="M14 44l16-8 16 8"/><circle cx="50" cy="8" r="3" stroke="#6A8A14"/>']].map(([a,b,s])=>`<div class="card" style="padding:16px 16px 12px"><div style="font-size:16px;font-weight:500">${a}</div><div class="h-en" style="font-size:12px;margin-top:2px">${b}</div><svg viewBox="0 0 60 50" width="72" style="display:block;margin:12px 0 0 auto" fill="none" stroke="#55554F" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${s}</svg></div>`).join('')}</div>
+ <div style="text-align:center;padding:10px 0 0"><a data-go="auth" class="muted" style="font-size:13px;cursor:pointer">退出登录</a></div>
+ <div class="wm"><b>邻里借物</b><span>linli</span></div></div>${navbar('profile')}</div>`;
+
+/* 吉祥物「小邻」四种表情：run 加载中 / ok 成功 / err 出错 / empty 空状态 */
+function mascot(face='run',size=96){
+ const O='#4F6A0A',K='#2C2C2A',B='#A6C64B',sw='stroke-linecap="round" stroke-linejoin="round"';
+ const eyes={run:`<g class="mc-eyes"><ellipse cx="41" cy="56" rx="3.2" ry="4.2" fill="${K}"/><ellipse cx="59" cy="56" rx="3.2" ry="4.2" fill="${K}"/><circle cx="42.2" cy="54.4" r="1.2" fill="#fff"/><circle cx="60.2" cy="54.4" r="1.2" fill="#fff"/></g>`,
+  ok:`<path d="M37.5 57.5l3.5-3.6 3.5 3.6M55.5 57.5l3.5-3.6 3.5 3.6" stroke="${K}" stroke-width="2.4" fill="none" ${sw}/>`,
+  err:`<path d="M38 53l6 6M44 53l-6 6M56 53l6 6M62 53l-6 6" stroke="${K}" stroke-width="2.3" fill="none" ${sw}/>`,
+  empty:`<g class="mc-eyes"><ellipse cx="43" cy="55" rx="3.2" ry="4.2" fill="${K}"/><ellipse cx="61" cy="55" rx="3.2" ry="4.2" fill="${K}"/><circle cx="44.4" cy="53.4" r="1.2" fill="#fff"/><circle cx="62.4" cy="53.4" r="1.2" fill="#fff"/></g>`}[face];
+ const mouth={run:`<path d="M46.5 62.5q3.5 3.5 7 0" stroke="${K}" stroke-width="2" fill="none" ${sw}/>`,
+  ok:`<path d="M44.5 61.5h11q0 6.5-5.5 6.5t-5.5-6.5z" fill="#D2604B" stroke="${K}" stroke-width="1.8" ${sw}/>`,
+  err:`<path d="M43.5 65q1.6-2 3.2 0t3.3 0 3.3 0 3.2 0" stroke="${K}" stroke-width="2" fill="none" ${sw}/>`,
+  empty:`<ellipse cx="52" cy="64" rx="2.2" ry="2.6" fill="none" stroke="${K}" stroke-width="2"/>`}[face];
+ const arms={run:'',ok:`<circle cx="21" cy="45" r="4" fill="${B}" stroke="${O}" stroke-width="2.4"/><circle cx="79" cy="45" r="4" fill="${B}" stroke="${O}" stroke-width="2.4"/>`,err:`<circle cx="23" cy="66" r="4" fill="${B}" stroke="${O}" stroke-width="2.4"/><circle cx="77" cy="66" r="4" fill="${B}" stroke="${O}" stroke-width="2.4"/>`,empty:''}[face];
+ const front={run:`<rect x="36.5" y="66" width="27" height="16" rx="2.5" fill="#EBCB98" stroke="#8A6534" stroke-width="2.2"/><path d="M50 66v6" stroke="#8A6534" stroke-width="2.2" ${sw}/><circle cx="35.5" cy="73" r="3.6" fill="${B}" stroke="${O}" stroke-width="2.2"/><circle cx="64.5" cy="73" r="3.6" fill="${B}" stroke="${O}" stroke-width="2.2"/>`,
+  ok:'',err:`<path class="mc-drop" d="M73 34c3 4 4 6 4 8a4 4 0 0 1-8 0c0-2 1-4 4-8z" fill="#CFE6F3" stroke="#4A87A8" stroke-width="1.8"/>`,
+  empty:`<g class="mc-mag"><path d="M64 74l-7 6" stroke="${K}" stroke-width="3" ${sw}/><circle cx="71" cy="67" r="8" fill="#F4F9FB" fill-opacity=".75" stroke="${K}" stroke-width="2.4"/><path d="M67.5 64a4.5 4.5 0 0 1 4.5-1.5" stroke="#fff" stroke-width="1.8" fill="none" ${sw}/><circle cx="57" cy="80" r="3.6" fill="${B}" stroke="${O}" stroke-width="2.2"/></g>`}[face];
+ const extra={run:`<g class="mc-spd" stroke="#6A8A14" stroke-width="2.4" ${sw}><path d="M8 52h8"/><path d="M3 62h10"/><path d="M8 72h7"/></g>`,
+  ok:`<path class="mc-tw" d="M13 22l1.8 4.2 4.2 1.8-4.2 1.8-1.8 4.2-1.8-4.2L7 28l4.2-1.8z" fill="#E8B23A"/><path class="mc-tw" d="M87 30l1.4 3.2 3.2 1.4-3.2 1.4-1.4 3.2-1.4-3.2-3.2-1.4 3.2-1.4z" fill="#6A8A14"/>`,
+  err:'',empty:`<text class="mc-q" x="80" y="34" font-family="Outfit,sans-serif" font-size="18" font-weight="600" fill="#6A8A14">?</text>`}[face];
+ return `<svg class="mc mc-${face}" width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true">${extra}
+ <ellipse class="mc-sh" cx="50" cy="90" rx="20" ry="3.4" fill="rgba(44,44,42,.13)"/>
+ <g class="mc-all"><g class="mc-f1"><ellipse cx="40" cy="84.5" rx="6.2" ry="3.6" fill="${O}"/></g><g class="mc-f2"><ellipse cx="60" cy="84.5" rx="6.2" ry="3.6" fill="${O}"/></g>
+ <g class="mc-sp"><path d="M50 34q-1-7 4-11.5" stroke="${O}" stroke-width="2.4" fill="none" ${sw}/><circle cx="56" cy="19.5" r="4.4" fill="#E5F0C4" stroke="${O}" stroke-width="2.4"/></g>
+ ${arms}<path d="M50 33c17 0 29 12 29 27 0 13.5-11.5 23-29 23S21 73.5 21 60c0-15 12-27 29-27z" fill="${B}" stroke="${O}" stroke-width="2.6"/>
+ <ellipse cx="38" cy="43" rx="7" ry="3.6" fill="#fff" opacity=".38" transform="rotate(-24 38 43)"/>
+ <ellipse cx="33.5" cy="63" rx="4.2" ry="2.5" fill="#F29C93" opacity=".75"/><ellipse cx="66.5" cy="63" rx="4.2" ry="2.5" fill="#F29C93" opacity=".75"/>
+ ${eyes}${mouth}${front}</g></svg>`;}
+const loader=(t='加载中')=>`<div class="loading" role="status" aria-live="polite"><div class="ld-card">${mascot('run',96)}
+ <div class="ld-txt">${t}</div><div class="ld-dots"><i></i><i></i><i></i></div></div></div>`;
+R.loading=()=>R.discover()+loader('正在加载附近的物品');
+R.mascot=()=>{const F=[['run','加载中','网络请求时，抱着包裹一路小跑'],['ok','成功','发布成功、申请已提交、归还完成'],['err','出错了','网络开小差，配“重新加载”按钮'],['empty','空空如也','附近没有物品、暂无订单或消息']];
+ return `<div class="scr">${sbar()}${hdr('小邻表情包',{back:'loading'})}<div class="body">
+ <div style="padding:0 22px 16px"><h1 class="h-big" style="font-size:30px">你好，我是小邻</h1><div class="h-en">Linli mascot · 4 moods</div></div>
+ <div class="sec" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">${F.map(([f,n,d])=>`<div class="card" style="padding:18px 12px 16px;display:flex;flex-direction:column;align-items:center;text-align:center">${mascot(f,104)}<div style="font-size:15px;font-weight:500;margin-top:8px">${n}</div><div class="muted" style="font-size:12px;line-height:1.5;margin-top:4px">${d}</div></div>`).join('')}</div>
+ <div class="card sec pad" style="text-align:center">${mascot('err',88)}<div style="font-size:16px;font-weight:500;margin-top:6px">网络开小差了</div><div class="muted" style="font-size:13px;margin-top:6px">检查一下网络，再试一次</div><button class="btn b-dark b-sm" style="margin-top:14px" data-go="loading">重新加载</button></div>
+ <div class="wm"><b>邻里借物</b><span>linli</span></div></div></div>`};
+
+/* ========== 渲染与交互 ========== */
+const $=s=>document.querySelector(s);
+let mode='one';
+/* ---------- 动效系统 ----------
+   缓动：出场用 expo-out，弹性用轻微回弹；时长 280–560ms。
+   层级：Tab 页同级 → 淡入 + 轻微放大；进入下级 → 右侧推入、旧页左移变暗；返回 → 反向；发布 → 底部弹出。 */
+const RM=window.matchMedia('(prefers-reduced-motion: reduce)');
+const EASE='cubic-bezier(.22,1,.36,1)',SPRING='cubic-bezier(.34,1.45,.64,1)';
+const DEPTH={auth:0,discover:0,orders:0,messages:0,profile:0,loading:0,browse:1,detail:2,apply:3,publish:1,pickup:2,order:1,chat:2,mascot:1};
+const MODAL={publish:1};
+const anim=(el,kf,o)=>{if(!el||RM.matches)return null;return el.animate(kf,Object.assign({duration:420,easing:EASE,fill:'backwards'},o));};
+function transition(oldEl,newEl,from,to){
+ if(!oldEl||RM.matches)return;const ph=$('#phone');const d0=DEPTH[from]??1,d1=DEPTH[to]??1;
+ oldEl.style.pointerEvents='none';
+ let kind=d0===0&&d1===0?'tab':MODAL[to]?'up':MODAL[from]?'down':d1>d0?'push':'pop';
+ if(kind==='push'||kind==='up'){ph.insertBefore(oldEl,newEl);}else{ph.appendChild(oldEl);}
+ const dur=kind==='tab'?320:460;let a;
+ if(kind==='tab'){anim(newEl,[{opacity:0,scale:'1.015'},{opacity:1,scale:'1'}],{duration:dur});a=oldEl.animate([{opacity:1},{opacity:0}],{duration:200,fill:'forwards'});}
+ else if(kind==='push'){newEl.style.boxShadow='-20px 0 40px -20px rgba(0,0,0,.35)';anim(newEl,[{translate:'100% 0'},{translate:'0 0'}],{duration:dur});a=oldEl.animate([{translate:'0 0',filter:'brightness(1)'},{translate:'-28% 0',filter:'brightness(.82)'}],{duration:dur,easing:EASE,fill:'forwards'});}
+ else if(kind==='pop'){oldEl.style.boxShadow='-20px 0 40px -20px rgba(0,0,0,.35)';anim(newEl,[{translate:'-28% 0',filter:'brightness(.82)'},{translate:'0 0',filter:'brightness(1)'}],{duration:dur});a=oldEl.animate([{translate:'0 0'},{translate:'100% 0'}],{duration:dur,easing:EASE,fill:'forwards'});}
+ else if(kind==='up'){newEl.style.borderRadius='28px 28px 0 0';anim(newEl,[{translate:'0 100%'},{translate:'0 0'}],{duration:520});a=oldEl.animate([{scale:'1',filter:'brightness(1)'},{scale:'.94',filter:'brightness(.7)'}],{duration:520,easing:EASE,fill:'forwards'});}
+ else {anim(newEl,[{scale:'.94',filter:'brightness(.7)'},{scale:'1',filter:'brightness(1)'}],{duration:440});a=oldEl.animate([{translate:'0 0'},{translate:'0 100%'}],{duration:440,easing:EASE,fill:'forwards'});}
+ let done=false;const fin=()=>{if(done)return;done=true;oldEl.remove();newEl.style.boxShadow='';newEl.style.borderRadius='';};
+ a.onfinish=fin;setTimeout(fin,dur+120);
+}
+/* 新页面内容错落入场 */
+function enter(scr,delay=120){
+ if(!scr||RM.matches)return;
+ const items=[...scr.querySelectorAll('.body > *:not(.wm), .body .sec > .card, .tabs, .ld-card')].filter(el=>el.offsetParent!==null).slice(0,12);
+ items.forEach((el,k)=>anim(el,[{opacity:0,translate:'0 18px'},{opacity:1,translate:'0 0'}],{duration:560,delay:delay+k*45}));
+ scr.querySelectorAll('.pin').forEach((el,k)=>anim(el,[{opacity:0,translate:'0 -36px'},{opacity:1,translate:'0 0'}],{duration:620,delay:delay+120+k*60,easing:SPRING}));
+ const r=scr.querySelector('.radius');anim(r,[{opacity:0,scale:'.4'},{opacity:1,scale:'1'}],{duration:800,delay:delay});
+ const me=scr.querySelector('.me');anim(me,[{scale:'0'},{scale:'1'}],{duration:500,delay:delay,easing:SPRING});
+ const nav=scr.querySelector('.nav a.on svg');anim(nav,[{scale:'1'},{scale:'1.22'},{scale:'1'}],{duration:480,delay:delay,easing:SPRING,fill:'none'});
+ scr.querySelectorAll('[data-count]').forEach(el=>countUp(el,delay));
+}
+function countUp(el,delay){const to=+el.dataset.count;if(RM.matches||!to)return;const t0=performance.now()+delay,D=900;el.textContent='0';
+ const step=t=>{const p=Math.min(1,Math.max(0,(t-t0)/D));el.textContent=Math.round(to*(1-Math.pow(1-p,4)));if(p<1)requestAnimationFrame(step);};requestAnimationFrame(step);}
+/* 详情页头图视差 + 顶部按钮随滚动加底色 */
+function parallax(scr){const hero=scr.querySelector('.hero'),body=scr.querySelector('.body');if(!hero||!body)return;
+ body.addEventListener('scroll',()=>{const y=body.scrollTop;if(RM.matches)return;hero.style.translate=`0 ${-y*.35}px`;hero.style.scale=String(1+Math.max(0,-y)/400);hero.style.filter=`brightness(${1-Math.min(y,220)/900})`;},{passive:true});}
+function toc(){const g={};SCREENS.forEach(s=>(g[s.g]=g[s.g]||[]).push(s));
+ $('#toc').innerHTML=Object.entries(g).map(([k,v])=>`<div><h3>${k}</h3>${v.map(s=>`<a href="#${s.id}" class="${s.id===S.screen&&mode==='one'?'on':''}">${s.n}<span>${s.en}</span></a>`).join('')}</div>`).join('');
+ const s=SCREENS.find(x=>x.id===S.screen);$('#note').innerHTML=mode==='one'?`<b>${s.n}</b><br>${s.note}<br><span style="color:var(--sub)">接口：</span><code>${s.api}</code>`:'点击任意一屏进入单屏交互。所有物品、人名与订单均为示例数据。';}
+function bind(scr){
+ const cb=scr.querySelector('#chatbody');if(cb)cb.scrollTop=cb.scrollHeight;
+ const f=scr.querySelector('#chatform');if(f)f.addEventListener('submit',e=>{e.preventDefault();const v=$('#chatin').value.trim();if(!v)return;S.msgs.push({me:1,t:v.replace(/</g,'&lt;')});
+  refresh(s=>{const b=s.querySelectorAll('.bub-me');anim(b[b.length-1],[{opacity:0,scale:'.6',translate:'0 12px'},{opacity:1,scale:'1',translate:'0 0'}],{duration:420,easing:SPRING});$('#chatin').focus();});
+  setTimeout(()=>{if(S.screen!=='chat')return;S.typing=1;refresh(s=>anim(s.querySelector('.typing'),[{opacity:0,scale:'.6'},{opacity:1,scale:'1'}],{duration:360,easing:SPRING}));
+   setTimeout(()=>{if(S.screen!=='chat')return;S.typing=0;S.msgs.push({t:'收到～'});refresh(s=>{const b=s.querySelectorAll('.bub-you');anim(b[b.length-1],[{opacity:0,scale:'.6',translate:'0 12px'},{opacity:1,scale:'1',translate:'0 0'}],{duration:420,easing:SPRING});});},1300);},500);});
+ parallax(scr);
+}
+/* 同一页内状态变化：原地重绘，不做整页入场 */
+function refresh(after){const ph=$('#phone');const sc=ph.querySelector('.body');const st=sc?sc.scrollTop:0;
+ ph.innerHTML=R[S.screen]()+(S.loading?loader(S.loading):'');const scr=ph.firstElementChild;const nb=scr.querySelector('.body');if(nb&&S.screen!=='chat')nb.scrollTop=st;bind(scr);
+ const ld=ph.querySelector('.ld-card');if(ld)anim(ld,[{opacity:0,scale:'.82'},{opacity:1,scale:'1'}],{duration:420,easing:SPRING});
+ if(after)after(scr);toc();}
+function render(from){
+ if(mode==='one'){let ph=$('#phone');const old=ph&&from&&from!==S.screen?ph.firstElementChild:null;
+  if(!ph){$('#stage').innerHTML='<div class="phone-wrap" id="pw"><div class="phone" id="phone"></div></div>';ph=$('#phone');}
+  if(old)old.remove();
+  ph.innerHTML=R[S.screen]()+(S.loading?loader(S.loading):'');fit();const scr=ph.firstElementChild;bind(scr);
+  if(old)transition(old,scr,from,S.screen);enter(scr,old?160:60);
+ }else{$('#stage').innerHTML=`<div class="grid" style="width:100%">${SCREENS.map(s=>`<div class="gcell" role="link" tabindex="0" data-pick="${s.id}"><div class="mini"><div class="phone" style="pointer-events:none">${R[s.id]()}</div></div><div class="cap">${s.n}<span>${s.en}</span></div></div>`).join('')}</div>`;
+  document.querySelectorAll('.gcell').forEach((el,k)=>anim(el,[{opacity:0,translate:'0 24px'},{opacity:1,translate:'0 0'}],{duration:600,delay:k*50}));}
+ toc();$('#m-one').classList.toggle('on',mode==='one');$('#m-all').classList.toggle('on',mode==='all');}
+function fit(){const pw=$('#pw'),ph=$('#phone');if(!pw)return;const w=$('#stage').clientWidth-24;const sc=Math.min(1,w/390,Math.max(.62,(window.innerHeight-48)/844));ph.style.transform=`scale(${sc})`;pw.style.width=390*sc+'px';pw.style.height=844*sc+'px';pw.style.margin='10px';}
+function go(id){if(!R[id])return;const from=mode==='one'?S.screen:null;S.screen=id;mode='one';S.typing=0;try{history.replaceState(null,'','#'+id)}catch(e){location.hash=id}render(from);}
+function applySet(str){const[k,v]=str.split(':');const prev=S[k];S[k]=isNaN(+v)?v:+v;
+ refresh(scr=>{
+  if(k==='radius'){const r=scr.querySelector('.radius');anim(r,[{scale:String(prev<S[k]?.7:1.3),opacity:.4},{scale:'1',opacity:1}],{duration:600,easing:SPRING});scr.querySelectorAll('.pin').forEach((el,i)=>anim(el,[{opacity:0,scale:'.5'},{opacity:1,scale:'1'}],{duration:480,delay:i*35,easing:SPRING}));}
+  if(k==='role'){const dir=S[k]==='owner'?1:-1;scr.querySelectorAll('.body > .sec').forEach((el,i)=>anim(el,[{opacity:0,translate:`${dir*40}px 0`},{opacity:1,translate:'0 0'}],{duration:480,delay:i*45}));}
+  if(k==='cat'){scr.querySelectorAll('.body > a, .body > div').forEach((el,i)=>anim(el,[{opacity:0,translate:'0 14px'},{opacity:1,translate:'0 0'}],{duration:420,delay:i*40}));}
+  if(k==='auth'){const c=scr.querySelector('.card');anim(c,[{opacity:.3,translate:'0 8px'},{opacity:1,translate:'0 0'}],{duration:380});}
+  const on=scr.querySelector(`[data-set="${str}"]`);anim(on,[{scale:'.9'},{scale:'1'}],{duration:380,easing:SPRING,fill:'none'});
+ });}
+document.addEventListener('click',e=>{if(S.loading)return;const ld=e.target.closest('[data-load]');if(ld&&mode==='one'){e.preventDefault();e.stopPropagation();S.loading=ld.dataset.load;refresh();setTimeout(()=>{S.loading=null;if(ld.dataset.set){applySet(ld.dataset.set);}else go(ld.dataset.go);},1000);return;}
+ const set=e.target.closest('[data-set]');if(set&&mode==='one'){e.preventDefault();e.stopPropagation();applySet(set.dataset.set);return;}
+ const g=e.target.closest('[data-go]');if(g&&mode==='one'){e.preventDefault();go(g.dataset.go);return;}
+ const p=e.target.closest('[data-pick]');if(p){e.preventDefault();go(p.dataset.pick);}});
+$('#m-one').onclick=()=>{if(mode==='one')return;mode='one';$('#stage').innerHTML='';render()};$('#m-all').onclick=()=>{mode='all';render()};
+window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(R[h]&&(h!==S.screen||mode!=='one'))go(h);});
+window.addEventListener('resize',()=>mode==='one'&&fit());
+$('#logo').innerHTML=LOGO(44);
+{const h=location.hash.slice(1);if(R[h])S.screen=h;}
+render();
+</script>

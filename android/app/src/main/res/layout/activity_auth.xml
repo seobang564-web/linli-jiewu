@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_auth"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="22dp"
+        android:paddingEnd="22dp">
+
+        <ImageView
+            android:layout_width="52dp"
+            android:layout_height="52dp"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="40dp"
+            android:importantForAccessibility="no"
+            android:src="@drawable/logo_mark" />
+
+        <TextView
+            style="@style/T.Big"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="16dp"
+            android:fontFamily="sans-serif"
+            android:text="@string/app_name"
+            android:textColor="@color/olive_deep"
+            android:textSize="42sp" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="10dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView android:layout_width="18dp" android:layout_height="18dp" android:importantForAccessibility="no" android:src="@drawable/ic_pin" />
+            <TextView style="@style/T.Body" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="6dp" android:text="@string/auth_slogan" />
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:layout_marginTop="24dp"
+            android:layout_marginBottom="18dp"
+            android:background="@drawable/bg_dashed"
+            android:layerType="software" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginBottom="14dp"
+            android:gravity="bottom"
+            android:orientation="horizontal">
+
+            <TextView android:id="@+id/tabRegister" style="@style/AuthTab" android:text="@string/auth_register" />
+            <TextView android:id="@+id/tabLogin" style="@style/AuthTab" android:layout_marginStart="26dp" android:text="@string/auth_login" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/formCard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:animateLayoutChanges="true"
+            android:background="@drawable/bg_card"
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp">
+
+            <LinearLayout style="@style/FormRow">
+                <TextView style="@style/T.Label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/auth_username" />
+                <EditText android:id="@+id/username" style="@style/Field" android:layout_width="match_parent" android:layout_height="wrap_content" android:autofillHints="username" android:hint="@string/auth_username_hint" android:inputType="text" android:maxLength="20" />
+            </LinearLayout>
+            <View style="@style/FormDivider" />
+            <LinearLayout style="@style/FormRow">
+                <TextView style="@style/T.Label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/auth_password" />
+                <EditText android:id="@+id/password" style="@style/Field" android:layout_width="match_parent" android:layout_height="wrap_content" android:autofillHints="password" android:hint="@string/auth_password_hint" android:inputType="textPassword" android:maxLength="32" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/registerFields"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <View style="@style/FormDivider" />
+                <LinearLayout style="@style/FormRow">
+                    <TextView style="@style/T.Label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/auth_nickname" />
+                    <EditText android:id="@+id/nickname" style="@style/Field" android:layout_width="match_parent" android:layout_height="wrap_content" android:autofillHints="nickname" android:hint="@string/auth_nickname_hint" android:maxLength="32" />
+                </LinearLayout>
+                <View style="@style/FormDivider" />
+                <LinearLayout style="@style/FormRow">
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:orientation="horizontal">
+                        <TextView style="@style/T.Label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/auth_contact" />
+                        <TextView style="@style/T.Label" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:text="@string/auth_optional" android:textColor="@color/sub" />
+                    </LinearLayout>
+                    <EditText android:id="@+id/contact" style="@style/Field" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/auth_contact_hint" android:importantForAutofill="no" android:maxLength="64" />
+                    <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:gravity="center_vertical" android:orientation="horizontal">
+                        <ImageView android:layout_width="14dp" android:layout_height="14dp" android:importantForAccessibility="no" android:src="@drawable/ic_shield" />
+                        <TextView style="@style/T.Sub" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:textSize="11.5sp" android:text="@string/auth_contact_note" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <CheckBox
+            android:id="@+id/agree"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:buttonTint="@color/olive"
+            android:checked="true"
+            android:text="@string/auth_agree"
+            android:textColor="@color/ink_2"
+            android:textSize="12.5sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/submit"
+            style="@style/Btn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:minHeight="50dp"
+            android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/guest"
+            style="@style/T.Sub"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="30dp"
+            android:padding="8dp"
+            android:text="@string/auth_guest"
+            android:textSize="13sp" />
+    </LinearLayout>
+</ScrollView>

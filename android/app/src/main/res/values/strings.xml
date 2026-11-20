@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">邻里借物地图</string>
-    <string name="bootstrap_title">邻里好物，借来用用</string>
-    <string name="bootstrap_description">发现附近闲置，让物品流动起来。</string>
+    <string name="app_name">邻里借物</string>
+    <string name="app_name_en">Linli · Borrow nearby</string>
+    <string name="watermark_cn">邻里借物</string>
+    <string name="watermark_en">linli</string>
+
+    <!-- 第一周连接检查页（保留，入口移到“我的”） -->
+    <string name="bootstrap_title">服务连接检查</string>
+    <string name="bootstrap_description">检查能否连接邻里借物服务器。</string>
     <string name="connection_title">服务连接</string>
     <string name="server_address">服务器：%1$s</string>
     <string name="check_connection">检查服务连接</string>
@@ -11,11 +16,60 @@
     <string name="connection_success">连接成功\n%1$s</string>
     <string name="connection_failed">连接失败，请确认服务器地址、网络及 8080 端口后重试。</string>
     <string name="connection_server_error">服务暂不可用，请稍后重试。</string>
-    <string name="bootstrap_footer">发现、发布、借还与聊天页面将在后续迭代接入。</string>
+    <string name="bootstrap_footer">这里只做网络连通检查，业务页面从底部导航进入。</string>
+    <string name="open_discover">返回首页</string>
+
+    <!-- 底部导航 -->
+    <string name="nav_discover">发现</string>
+    <string name="nav_orders">订单</string>
+    <string name="nav_publish">发布</string>
+    <string name="nav_messages">消息</string>
+    <string name="nav_profile">我的</string>
+
+    <!-- 登录注册 -->
+    <string name="auth_slogan">附近的闲置，随手借来用</string>
+    <string name="auth_register">注册</string>
+    <string name="auth_login">登录</string>
+    <string name="auth_username">用户名</string>
+    <string name="auth_username_hint">4–20 位字母、数字或下划线</string>
+    <string name="auth_password">密码</string>
+    <string name="auth_password_hint">6–32 位</string>
+    <string name="auth_nickname">昵称</string>
+    <string name="auth_nickname_hint">邻居们看到的名字</string>
+    <string name="auth_contact">联系方式</string>
+    <string name="auth_optional">选填</string>
+    <string name="auth_contact_hint">例如 微信 shuyu_01</string>
+    <string name="auth_contact_note">仅在订单被接受后对双方可见</string>
+    <string name="auth_agree">我已阅读并同意《用户协议》《隐私政策》</string>
+    <string name="auth_submit_register">注册并登录</string>
+    <string name="auth_submit_login">登录</string>
+    <string name="auth_guest">先随便看看 ›</string>
+    <string name="auth_err_username">用户名需为 4–20 位字母、数字或下划线</string>
+    <string name="auth_err_password">密码需为 6–32 位</string>
+    <string name="auth_err_nickname">请填写昵称</string>
+    <string name="auth_err_agree">请先阅读并同意用户协议和隐私政策</string>
+    <string name="loading_register">正在注册</string>
+    <string name="loading_login">正在登录</string>
 
     <!-- 发现页 / 地图 -->
-    <string name="open_discover">打开地图</string>
     <string name="discover_title">发现</string>
+    <string name="search_hint">搜一搜：帐篷、电钻、行李箱</string>
+    <string name="radius_500">500m</string>
+    <string name="radius_1k">1km</string>
+    <string name="radius_3k">3km</string>
+    <string name="radius_5k">5km</string>
+    <string name="discover_place">云南大学呈贡校区 · 楠苑</string>
+    <string name="discover_switch">切换 ›</string>
+    <string name="discover_summary">%1$s 内 %2$d 件，最近 %3$dm</string>
+    <string name="discover_borrow">找东西</string>
+    <string name="discover_borrow_en">Borrow</string>
+    <string name="discover_lend">借出去</string>
+    <string name="discover_lend_en">Lend</string>
+    <string name="discover_lend_badge">1 分钟发布!</string>
+    <string name="discover_nearest">离你最近</string>
+    <string name="discover_nearest_en">Nearest first</string>
+    <string name="loading_search">正在搜索附近</string>
+    <string name="loading_nearby">正在加载附近的物品</string>
     <string name="privacy_title">隐私政策说明</string>
     <string name="privacy_message">为了在地图上显示你附近的闲置物品，本应用集成了高德地图、定位与搜索 SDK。\n\n在你同意后，高德 SDK 会获取你的位置信息、设备信息与网络状态，仅用于地图展示、定位与附近检索。你的精确位置不会被本应用上传或公开，发布物品时只提交你选择的交接点。\n\n你可以随时在系统设置中关闭定位权限。</string>
     <string name="privacy_agree">同意</string>
@@ -30,4 +84,163 @@
     <string name="location_failed_detail">定位失败（错误码 %1$d）：%2$s</string>
     <string name="location_failed_unknown">未知原因，请检查定位服务与网络</string>
     <string name="location_mock_marker">调试固定位置</string>
+    <string name="location_me">我的位置</string>
+
+    <!-- 分类浏览 -->
+    <string name="browse_title">找东西</string>
+    <string name="browse_map">地图</string>
+    <string name="browse_place">云南大学呈贡校区</string>
+    <string name="browse_radius">半径 1km</string>
+    <string name="browse_notice">新上架：双人帐篷、铝合金折叠梯</string>
+    <string name="browse_all">全部</string>
+    <string name="browse_nearest">离你最近</string>
+    <string name="browse_empty">附近 1km 暂时没有这类物品</string>
+    <string name="browse_borrow">借</string>
+
+    <!-- 分类与状态（与接口枚举对应） -->
+    <string name="cat_tool">工具</string>
+    <string name="cat_luggage">行李箱包</string>
+    <string name="cat_camping">露营户外</string>
+    <string name="cat_sports">运动</string>
+    <string name="cat_electronics">电子设备</string>
+    <string name="cat_book">书籍</string>
+    <string name="cat_other">其他</string>
+    <string name="status_available">可借</string>
+    <string name="status_reserved">已预约</string>
+    <string name="status_lent">借出中</string>
+    <string name="status_offline">已下架</string>
+    <string name="borrow_pending">待确认</string>
+    <string name="borrow_accepted">待交接</string>
+    <string name="borrow_borrowing">借用中</string>
+    <string name="borrow_returning">待验收</string>
+    <string name="borrow_completed">已完成</string>
+    <string name="borrow_cancelled">已取消</string>
+    <string name="distance_m">%1$dm</string>
+    <string name="distance_km">%1$.1fkm</string>
+
+    <!-- 物品详情 -->
+    <string name="detail_handover">可当面交接</string>
+    <string name="detail_distance">距你 %1$dm · 步行约 %2$d 分钟</string>
+    <string name="detail_pickup">交接点</string>
+    <string name="detail_pickup_en">Pickup point</string>
+    <string name="detail_owner_meta">发布于 %1$s · %2$s</string>
+    <string name="detail_chat">聊一聊 ›</string>
+    <string name="detail_contact_owner">联系物主</string>
+    <string name="detail_apply">申请借用</string>
+
+    <!-- 申请借用 -->
+    <string name="apply_title">申请借用</string>
+    <string name="apply_due">归还时间</string>
+    <string name="apply_due_en">Return by</string>
+    <string name="apply_other_time">其他时间</string>
+    <string name="apply_summary">借用约 %1$s 天，%2$s %3$s 前归还</string>
+    <string name="apply_note">给物主留言</string>
+    <string name="apply_note_en">Note</string>
+    <string name="apply_note_default">周六去捞鱼河露营，周日晚上就还，会晾干再还。</string>
+    <string name="apply_counter">%1$d/200</string>
+    <string name="apply_notice">提交后，物主需在 12 小时内确认，超时自动取消。双方联系方式会在物主接受后显示。</string>
+    <string name="apply_submit">提交申请</string>
+    <string name="loading_apply">正在提交申请</string>
+    <string name="day_today">今天</string>
+    <string name="day_tomorrow">明天</string>
+
+    <!-- 发布 -->
+    <string name="publish_title">发布闲置</string>
+    <string name="publish_title_en">Lend to your neighbors</string>
+    <string name="publish_draft_saved">草稿已保存 %1$s</string>
+    <string name="publish_change_cover">更换封面</string>
+    <string name="publish_photo_note">jpg / png / webp，≤ 5MB，上传时自动去除照片里的位置信息</string>
+    <string name="publish_field_title">标题</string>
+    <string name="publish_field_category">分类</string>
+    <string name="publish_field_desc">描述</string>
+    <string name="publish_field_pickup">交接点</string>
+    <string name="publish_counter_title">%1$d/50</string>
+    <string name="publish_counter_desc">%1$d/500</string>
+    <string name="publish_default_title">双人帐篷（带防潮垫）</string>
+    <string name="publish_default_desc">牧高笛双人帐，搭过三次，防潮垫一起借。周末去滇池边、捞鱼河露营都合适。还的时候晾干就行。</string>
+    <string name="publish_save_draft">存草稿</string>
+    <string name="publish_submit">发布</string>
+    <string name="publish_err_title">请填写标题</string>
+    <string name="publish_draft_toast">草稿已保存</string>
+    <string name="loading_publish">正在上传并发布</string>
+
+    <!-- 交接点 -->
+    <string name="pickup_title">选择交接点</string>
+    <string name="pickup_city">昆明市 ›</string>
+    <string name="pickup_search_hint">搜索地点</string>
+    <string name="pickup_drag_hint">拖动地图选择交接点</string>
+    <string name="pickup_coord">%1$.5f, %2$.5f · GCJ-02</string>
+    <string name="pickup_distance">距离 %1$dm</string>
+    <string name="pickup_label">交接点名称（展示给借用者）</string>
+    <string name="pickup_confirm">确认交接点</string>
+
+    <!-- 订单 -->
+    <string name="orders_borrower">我借入的</string>
+    <string name="orders_owner">我借出的</string>
+    <string name="orders_filter_all">全部</string>
+    <string name="order_detail_title">订单详情</string>
+    <string name="order_hint_accepted">请在约定时间到交接点，当面交接</string>
+    <string name="order_contact_owner">物主联系方式</string>
+    <string name="order_copy">复制</string>
+    <string name="order_copied">已复制</string>
+    <string name="order_snapshot">%1$s · 下单时快照</string>
+    <string name="order_due">约定归还</string>
+    <string name="order_created">申请时间</string>
+    <string name="order_note">留言</string>
+    <string name="order_no">订单编号</string>
+    <string name="order_timeline">订单记录</string>
+    <string name="order_timeline_en">Timeline</string>
+    <string name="order_cancel">取消借用</string>
+    <string name="order_contact">联系物主</string>
+    <string name="order_quantity">×1</string>
+
+    <!-- 消息与聊天 -->
+    <string name="messages_title">消息</string>
+    <string name="messages_title_en">Messages</string>
+    <string name="messages_notice">订单通知</string>
+    <string name="messages_notice_time">20:30</string>
+    <string name="messages_notice_text">舒煜 已接受你的借用申请：双人帐篷</string>
+    <string name="chat_item_meta">%1$s · 11-22 18:00 前归还</string>
+    <string name="chat_online">实时连接中</string>
+    <string name="chat_view_order">查看订单</string>
+    <string name="chat_input_hint">发消息…</string>
+    <string name="chat_auto_reply">收到～</string>
+    <string name="chat_send">发送</string>
+
+    <!-- 我的 -->
+    <string name="profile_week">本周邻居们借出了 %1$d 次</string>
+    <string name="profile_slogan">好东西出门串个门，\n记得回家</string>
+    <string name="profile_stat_items">我的发布</string>
+    <string name="profile_stat_in">借入中</string>
+    <string name="profile_stat_out">借出中</string>
+    <string name="profile_features">我的功能</string>
+    <string name="profile_f_items">我的发布</string>
+    <string name="profile_f_draft">草稿箱</string>
+    <string name="profile_f_in">借入记录</string>
+    <string name="profile_f_out">借出记录</string>
+    <string name="profile_f_contact">联系方式</string>
+    <string name="profile_f_history">搜索历史</string>
+    <string name="profile_f_location">定位权限</string>
+    <string name="profile_f_server">服务连接</string>
+    <string name="profile_guide">使用须知</string>
+    <string name="profile_guide_en">How it works</string>
+    <string name="profile_pact">邻里公约</string>
+    <string name="profile_pact_en">Neighbor pact</string>
+    <string name="profile_logout">退出登录</string>
+    <string name="profile_guest">游客</string>
+    <string name="profile_guest_meta">登录后可以发布和借用</string>
+    <string name="coming_soon">这个功能还在开发中</string>
+
+    <!-- 无障碍描述 -->
+    <string name="cd_back">返回</string>
+    <string name="cd_close">关闭</string>
+    <string name="cd_more">更多</string>
+    <string name="cd_search">搜索</string>
+    <string name="cd_locate">回到我的位置</string>
+    <string name="cd_navigate">导航</string>
+    <string name="cd_call">电话</string>
+    <string name="cd_edit">编辑资料</string>
+    <string name="cd_favorite">收藏</string>
+    <string name="cd_add">更多功能</string>
+    <string name="cd_filter">筛选</string>
 </resources>

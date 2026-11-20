@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 等高线：订单卡片顶部的地图意象 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp" android:height="140dp" android:viewportWidth="360" android:viewportHeight="140">
+    <group>
+        <path android:strokeColor="#296A8A14" android:strokeWidth="1" android:pathData="M-10,70c40,-30 80,-40 120,-20s70,30 110,0 90,-40 150,-10" />
+        <path android:strokeColor="#296A8A14" android:strokeWidth="1" android:pathData="M-10,90c40,-30 90,-36 130,-16s70,28 110,-2 90,-34 140,-6" />
+        <path android:strokeColor="#296A8A14" android:strokeWidth="1" android:pathData="M-10,50c50,-26 80,-34 120,-16s70,24 110,-4 100,-38 150,-14" />
+        <path android:strokeColor="#296A8A14" android:strokeWidth="1" android:pathData="M-10,110c50,-24 90,-30 130,-12s80,22 120,-6 80,-26 130,-4" />
+        <path android:strokeColor="#296A8A14" android:strokeWidth="1" android:pathData="M-10,30c40,-20 90,-26 130,-10s70,18 110,-6 100,-30 140,-12" />
+    </group>
+</vector>

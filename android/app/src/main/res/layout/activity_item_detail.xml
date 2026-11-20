@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background">
+
+    <FrameLayout
+        android:id="@+id/hero"
+        android:layout_width="match_parent"
+        android:layout_height="360dp">
+
+        <View
+            android:layout_width="220dp"
+            android:layout_height="220dp"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="-50dp"
+            android:layout_marginEnd="-70dp"
+            android:background="@drawable/bg_ring_white" />
+
+        <ImageView
+            android:id="@+id/heroImage"
+            android:layout_width="190dp"
+            android:layout_height="190dp"
+            android:layout_gravity="center"
+            android:layout_marginBottom="20dp"
+            android:importantForAccessibility="no" />
+    </FrameLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="92dp">
+
+        <LinearLayout
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="250dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_card_top_large"
+                android:elevation="2dp"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+                    <TextView android:id="@+id/title" style="@style/T" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:fontFamily="sans-serif-medium" android:lineSpacingMultiplier="1.2" android:textSize="23sp" />
+                    <TextView android:id="@+id/status" style="@style/T.Pill" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" />
+                </LinearLayout>
+
+                <LinearLayout android:id="@+id/tags" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:orientation="horizontal" />
+
+                <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:gravity="center_vertical" android:orientation="horizontal">
+                    <ImageView android:layout_width="18dp" android:layout_height="18dp" android:importantForAccessibility="no" android:src="@drawable/ic_pin" />
+                    <TextView android:id="@+id/distance" style="@style/T.Body" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="6dp" android:textSize="13.5sp" />
+                </LinearLayout>
+
+                <TextView android:id="@+id/description" style="@style/T.Body" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:lineSpacingMultiplier="1.5" android:textSize="14.5sp" />
+            </LinearLayout>
+
+            <LinearLayout style="@style/Card" android:layout_marginTop="12dp" android:orientation="vertical" android:padding="18dp">
+                <LinearLayout style="@style/SectionLabel" android:layout_marginBottom="12dp">
+                    <TextView style="@style/T.Title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/detail_pickup" />
+                    <TextView style="@style/T.En" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textSize="12sp" android:text="@string/detail_pickup_en" />
+                </LinearLayout>
+
+                <FrameLayout android:layout_width="match_parent" android:layout_height="110dp" android:background="@drawable/bg_round16_clip" android:outlineProvider="background">
+                    <ImageView android:id="@+id/miniMap" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="centerCrop" android:src="@drawable/map_static" />
+                    <FrameLayout android:layout_width="34dp" android:layout_height="40dp" android:layout_gravity="center" android:layout_marginStart="60dp" android:layout_marginTop="10dp" android:background="@drawable/bg_pin">
+                        <ImageView android:id="@+id/miniPinIcon" android:layout_width="15dp" android:layout_height="15dp" android:layout_gravity="center_horizontal" android:layout_marginTop="8dp" android:importantForAccessibility="no" />
+                    </FrameLayout>
+                </FrameLayout>
+
+                <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="14dp" android:gravity="center_vertical" android:orientation="horizontal">
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                        <TextView android:id="@+id/pickupLabel" style="@style/T.Title" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                        <TextView android:id="@+id/pickupAddress" style="@style/T.Sub" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" />
+                    </LinearLayout>
+                    <ImageButton android:id="@+id/navigate" style="@style/CircleBtn.Field" android:contentDescription="@string/cd_navigate" android:src="@drawable/ic_nav" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <LinearLayout android:id="@+id/ownerRow" style="@style/Card" android:gravity="center_vertical" android:orientation="horizontal" android:padding="16dp" android:stateListAnimator="@animator/press_sink">
+                <TextView android:id="@+id/ownerAvatar" style="@style/Avatar" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:id="@+id/ownerName" style="@style/T.Title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textSize="15sp" />
+                    <TextView android:id="@+id/ownerMeta" style="@style/T.Sub" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textSize="12sp" />
+                </LinearLayout>
+                <TextView style="@style/T.Sub" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/detail_chat" android:textSize="13sp" />
+            </LinearLayout>
+
+            <include layout="@layout/view_watermark" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="16dp"
+        android:paddingTop="6dp"
+        android:paddingEnd="16dp">
+
+        <ImageButton android:id="@+id/back" style="@style/CircleBtn" android:contentDescription="@string/cd_back" android:src="@drawable/ic_back" />
+        <View android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1" />
+        <LinearLayout android:layout_width="wrap_content" android:layout_height="34dp" android:background="@drawable/bg_pill_white" android:gravity="center_vertical" android:orientation="horizontal" android:paddingStart="12dp" android:paddingEnd="12dp">
+            <ImageView android:id="@+id/favorite" android:layout_width="18dp" android:layout_height="18dp" android:contentDescription="@string/cd_favorite" android:src="@drawable/ic_star" />
+            <View android:layout_width="1dp" android:layout_height="16dp" android:layout_marginStart="12dp" android:layout_marginEnd="12dp" android:background="@color/line" />
+            <ImageView android:layout_width="18dp" android:layout_height="18dp" android:contentDescription="@string/cd_more" android:src="@drawable/ic_more" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        style="@style/BottomBar"
+        android:layout_gravity="bottom">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/contact"
+            style="@style/Btn.Outline"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/detail_contact_owner"
+            app:icon="@drawable/ic_chat"
+            app:iconGravity="textStart"
+            app:iconPadding="6dp"
+            app:iconTint="@null"
+            xmlns:app="http://schemas.android.com/apk/res-auto" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/apply"
+            style="@style/Btn"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1.6"
+            android:text="@string/detail_apply" />
+    </LinearLayout>
+</FrameLayout>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 地图标记：水滴形，白描边 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="40dp" android:height="48dp" android:viewportWidth="40" android:viewportHeight="48">
+    <path android:fillColor="#336A8A14" android:pathData="M20,47m-7,0a7,2 0,1 0,14,0a7,2 0,1 0,-14,0" />
+    <path android:fillColor="@color/olive" android:strokeColor="#FFFFFF" android:strokeWidth="2.5" android:pathData="M20,44C20,44 4,31 4,19A16,16 0,0 1,36 19C36,31 20,44 20,44Z" />
+</vector>

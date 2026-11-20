@@ -1,41 +1,96 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 发现页：MapView 在用户同意隐私政策后由代码创建并放入 mapContainer -->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 发现页：高德地图铺底，顶部搜索与半径，底部可拖动的抽屉列表。MapView 在同意隐私政策后由代码放入 mapContainer -->
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="#EFEDE6">
 
     <FrameLayout
         android:id="@+id/mapContainer"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/statusCard"
+    <LinearLayout
+        android:id="@+id/topOverlay"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom"
-        android:layout_marginStart="@dimen/discover_card_margin"
-        android:layout_marginEnd="@dimen/discover_card_margin"
-        android:layout_marginBottom="@dimen/discover_card_margin"
-        android:visibility="gone"
-        app:cardBackgroundColor="@color/surface"
-        app:cardCornerRadius="16dp"
-        app:cardElevation="4dp">
+        android:orientation="vertical"
+        android:paddingStart="14dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="14dp">
 
         <LinearLayout
+            android:id="@+id/searchBar"
+            android:layout_width="match_parent"
+            android:layout_height="46dp"
+            android:background="@drawable/bg_search"
+            android:elevation="6dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="14dp"
+            android:stateListAnimator="@animator/press_sink">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:alpha="0.6"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_search" />
+
+            <TextView
+                style="@style/T"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:text="@string/search_hint"
+                android:textColor="@color/sub"
+                android:textSize="14sp" />
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:contentDescription="@string/cd_filter"
+                android:src="@drawable/ic_filter" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/radiusRow"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:clipToPadding="false"
+            android:orientation="horizontal"
+            android:paddingBottom="6dp">
+
+            <TextView android:id="@+id/radius500" style="@style/Chip.Solid" android:text="@string/radius_500" />
+            <TextView android:id="@+id/radius1000" style="@style/Chip.Solid" android:layout_marginStart="8dp" android:text="@string/radius_1k" />
+            <TextView android:id="@+id/radius3000" style="@style/Chip.Solid" android:layout_marginStart="8dp" android:text="@string/radius_3k" />
+            <TextView android:id="@+id/radius5000" style="@style/Chip.Solid" android:layout_marginStart="8dp" android:text="@string/radius_5k" />
+        </LinearLayout>
+
+        <!-- 隐私 / 权限 / 定位失败提示 -->
+        <LinearLayout
+            android:id="@+id/statusCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_card"
+            android:elevation="4dp"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:padding="16dp"
+            android:visibility="gone">
 
             <TextView
                 android:id="@+id/statusText"
+                style="@style/T"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:accessibilityLiveRegion="polite"
-                android:textColor="@color/text_primary"
-                android:textSize="15sp" />
+                android:lineSpacingMultiplier="1.3"
+                android:textSize="14sp" />
 
             <com.google.android.material.progressindicator.LinearProgressIndicator
                 android:id="@+id/statusProgress"
@@ -43,15 +98,181 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:indeterminate="true"
-                android:visibility="gone" />
+                android:visibility="gone"
+                app:indicatorColor="@color/olive"
+                app:trackColor="@color/olive_soft"
+                app:trackCornerRadius="2dp" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/statusAction"
+                style="@style/Btn.Small.Dark"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
-                android:layout_marginTop="8dp"
-                app:cornerRadius="12dp" />
+                android:layout_marginTop="10dp" />
         </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
-</FrameLayout>
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/locateButton"
+        style="@style/CircleBtn"
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:layout_margin="14dp"
+        android:contentDescription="@string/cd_locate"
+        android:elevation="4dp"
+        android:padding="10dp"
+        android:src="@drawable/ic_locate"
+        app:layout_anchor="@id/sheet"
+        app:layout_anchorGravity="top|end" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/sheet"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginTop="120dp"
+        android:background="@drawable/bg_sheet"
+        android:clipToPadding="false"
+        android:elevation="10dp"
+        android:paddingBottom="120dp"
+        app:behavior_peekHeight="440dp"
+        app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+        <LinearLayout
+            android:id="@+id/sheetContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <View
+                android:layout_width="38dp"
+                android:layout_height="4dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_handle" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="20dp"
+                android:paddingTop="14dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="14dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/T.Title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/discover_place" />
+
+                    <TextView
+                        android:id="@+id/summary"
+                        style="@style/T.Pill.Lime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/switchPlace"
+                    style="@style/T.Sub"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:padding="4dp"
+                    android:text="@string/discover_switch"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <View style="@style/Divider" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingTop="22dp"
+                android:paddingBottom="20dp">
+
+                <LinearLayout
+                    android:id="@+id/goBorrow"
+                    style="@style/SplitHalf">
+
+                    <TextView style="@style/T.Big" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/discover_borrow" />
+                    <TextView style="@style/T.En" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/discover_borrow_en" />
+                </LinearLayout>
+
+                <View android:layout_width="1dp" android:layout_height="60dp" android:background="@color/line" />
+
+                <FrameLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:clipChildren="false">
+
+                    <LinearLayout
+                        android:id="@+id/goLend"
+                        style="@style/SplitHalf"
+                        android:layout_width="match_parent">
+
+                        <TextView style="@style/T.Big" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/discover_lend" />
+                        <TextView style="@style/T.En" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/discover_lend_en" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/lendBadge"
+                        style="@style/T.Pill"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="top|end"
+                        android:layout_marginTop="-16dp"
+                        android:layout_marginEnd="18dp"
+                        android:background="@drawable/bg_pill_olive"
+                        android:text="@string/discover_lend_badge"
+                        android:textColor="@color/surface" />
+                </FrameLayout>
+            </LinearLayout>
+
+            <View style="@style/Divider" />
+
+            <HorizontalScrollView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:paddingStart="12dp"
+                android:paddingTop="16dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="6dp"
+                android:scrollbars="none">
+
+                <LinearLayout
+                    android:id="@+id/categoryRow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal" />
+            </HorizontalScrollView>
+
+            <LinearLayout
+                style="@style/SectionLabel"
+                android:paddingStart="20dp"
+                android:paddingTop="14dp">
+
+                <TextView style="@style/T.Title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/discover_nearest" />
+                <TextView style="@style/T.En" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:textSize="12sp" android:text="@string/discover_nearest_en" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/nearbyList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -1,15 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 设计令牌：与 docs/ui-prototype.html 的 :root 保持一致 -->
 <resources>
-    <color name="primary">#236950</color>
-    <color name="on_primary">#FFFFFF</color>
-    <color name="background">#F5F7F2</color>
+    <color name="olive">#6A8A14</color>
+    <color name="olive_deep">#4F6A0A</color>
+    <color name="olive_soft">#EEF3DD</color>
+    <color name="lime">#E5F0C4</color>
+    <color name="lime_line">#D2E3A3</color>
+    <color name="lime_ink">#5B7A0E</color>
+    <color name="mascot_body">#A6C64B</color>
+
+    <color name="ink">#2C2C2A</color>
+    <color name="ink_2">#55554F</color>
+    <color name="sub">#9B9B94</color>
+    <color name="hint">#BDBDB5</color>
+    <color name="line">#ECECE6</color>
+    <color name="field_bg">#F2F2EE</color>
+    <color name="background">#F6F6F2</color>
     <color name="surface">#FFFFFF</color>
-    <color name="text_primary">#20352B</color>
-    <color name="text_secondary">#53665C</color>
-    <color name="success">#236950</color>
-    <color name="error">#BA1A1A</color>
-    <color name="item_available">#236950</color>
-    <color name="item_reserved">#996500</color>
-    <color name="item_lent">#276195</color>
-    <color name="item_offline">#68746C</color>
+    <color name="watermark">#DADAD2</color>
+    <color name="scrim">#731E240E</color>
+
+    <color name="coral">#E2664F</color>
+    <color name="coral_line">#F1C6B4</color>
+    <color name="coral_ink">#C2613E</color>
+    <color name="coral_bg">#FFF8F4</color>
+    <color name="amber">#C27A12</color>
+    <color name="amber_bg">#FFF2DD</color>
+    <color name="gray_pill">#F0F0EC</color>
+    <color name="gray_pill_ink">#8A8A84</color>
+
+    <color name="tone_olive">#EEF3DD</color>
+    <color name="tone_peach">#FBEDE3</color>
+    <color name="tone_sky">#E6EFF4</color>
+    <color name="tone_sand">#F4EEDB</color>
+    <color name="tone_rose">#F7E8EA</color>
+
+    <!-- 旧页面仍在使用的名称 -->
+    <color name="primary">#6A8A14</color>
+    <color name="on_primary">#FFFFFF</color>
+    <color name="text_primary">#2C2C2A</color>
+    <color name="text_secondary">#55554F</color>
+    <color name="success">#4F6A0A</color>
+    <color name="error">#C2402B</color>
+    <!-- 物品状态颜色统一定义在这里 -->
+    <color name="item_available">#5B7A0E</color>
+    <color name="item_reserved">#C27A12</color>
+    <color name="item_lent">#8A8A84</color>
+    <color name="item_offline">#8A8A84</color>
 </resources>

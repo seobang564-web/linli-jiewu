@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item><shape><solid android:color="@color/surface" /><corners android:radius="@dimen/card_radius" /></shape></item>
+    <item android:bottom="40dp"><shape><gradient android:angle="270" android:startColor="#F2E5F0C4" android:endColor="#00FFFFFF" /><corners android:topLeftRadius="@dimen/card_radius" android:topRightRadius="@dimen/card_radius" /></shape></item>
+    <item android:drawable="@drawable/contour_lines" android:gravity="top|fill_horizontal" />
+</layer-list>

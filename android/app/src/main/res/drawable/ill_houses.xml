@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 个人中心头图：邻里小房子线稿 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="390dp" android:height="160dp" android:viewportWidth="390" android:viewportHeight="160">
+    <group>
+        <path android:strokeColor="#736A8A14" android:strokeWidth="1.4" android:strokeLineCap="round" android:strokeLineJoin="round"
+            android:pathData="M0,150h390M200,150V90l30,-24 30,24v60M220,150v-26h20v26M270,150V100l24,-18 24,18v50M330,150v-40l20,-14 20,14v40M150,150v-22a10,10 0,1 1,20 0v22M289,110a5,5 0,1 0,10 0a5,5 0,1 0,-10 0" />
+        <path android:fillColor="#FFFFFF" android:strokeColor="#996A8A14" android:strokeWidth="1.4" android:pathData="M350,40m-10,0a10,10 0,1 0,20 0a10,10 0,1 0,-20 0" />
+    </group>
+</vector>

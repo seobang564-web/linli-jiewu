@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scroll"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:clipToPadding="false"
+    android:paddingBottom="120dp"
+    android:scrollbars="none">
+
+    <LinearLayout
+        android:id="@+id/content"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <FrameLayout android:id="@+id/banner" android:layout_width="match_parent" android:layout_height="230dp" android:background="@drawable/bg_profile_banner">
+            <ImageView android:id="@+id/bannerArt" android:layout_width="match_parent" android:layout_height="160dp" android:layout_gravity="bottom" android:importantForAccessibility="no" android:scaleType="fitEnd" android:src="@drawable/ill_houses" />
+            <LinearLayout android:id="@+id/bannerText" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="22dp" android:layout_marginTop="76dp" android:orientation="vertical">
+                <TextView android:id="@+id/weekCount" style="@style/T" android:layout_width="wrap_content" android:layout_height="wrap_content" android:letterSpacing="0.05" android:textColor="@color/olive_deep" android:textSize="12sp" />
+                <TextView style="@style/T" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:fontFamily="sans-serif-light" android:lineSpacingMultiplier="1.25" android:text="@string/profile_slogan" android:textColor="@color/olive_deep" android:textSize="22sp" />
+            </LinearLayout>
+        </FrameLayout>
+
+        <LinearLayout android:id="@+id/userCard" style="@style/Card" android:layout_marginTop="-26dp" android:elevation="2dp" android:gravity="center_vertical" android:orientation="horizontal" android:padding="18dp">
+            <TextView android:id="@+id/avatar" style="@style/Avatar" android:layout_width="58dp" android:layout_height="58dp" android:textSize="22sp" />
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="14dp" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:id="@+id/nickname" style="@style/T" android:layout_width="wrap_content" android:layout_height="wrap_content" android:fontFamily="sans-serif-medium" android:textSize="19sp" />
+                <TextView android:id="@+id/meta" style="@style/T.Sub" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" />
+            </LinearLayout>
+            <ImageButton android:id="@+id/edit" style="@style/CircleBtn.Field" android:contentDescription="@string/cd_edit" android:src="@drawable/ic_edit" />
+        </LinearLayout>
+
+        <LinearLayout style="@style/Card" android:gravity="center_vertical" android:orientation="horizontal" android:paddingTop="22dp" android:paddingBottom="22dp">
+            <LinearLayout android:id="@+id/statItems" style="@style/Stat">
+                <TextView android:id="@+id/statItemsValue" style="@style/StatValue" />
+                <TextView style="@style/StatLabel" android:text="@string/profile_stat_items" />
+            </LinearLayout>
+            <View android:layout_width="1dp" android:layout_height="36dp" android:background="@color/line" />
+            <LinearLayout android:id="@+id/statIn" style="@style/Stat">
+                <TextView android:id="@+id/statInValue" style="@style/StatValue" />
+                <TextView style="@style/StatLabel" android:text="@string/profile_stat_in" />
+            </LinearLayout>
+            <View android:layout_width="1dp" android:layout_height="36dp" android:background="@color/line" />
+            <LinearLayout android:id="@+id/statOut" style="@style/Stat">
+                <TextView android:id="@+id/statOutValue" style="@style/StatValue" />
+                <TextView style="@style/StatLabel" android:text="@string/profile_stat_out" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <LinearLayout style="@style/Card" android:orientation="vertical" android:paddingStart="10dp" android:paddingTop="20dp" android:paddingEnd="10dp" android:paddingBottom="10dp">
+            <TextView style="@style/T.Title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_marginBottom="16dp" android:text="@string/profile_features" android:textSize="17sp" />
+            <GridLayout android:id="@+id/features" android:layout_width="match_parent" android:layout_height="wrap_content" android:columnCount="4" />
+        </LinearLayout>
+
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginStart="@dimen/gutter" android:layout_marginEnd="@dimen/gutter" android:layout_marginBottom="12dp" android:orientation="horizontal">
+            <LinearLayout android:id="@+id/guide" style="@style/MiniCard">
+                <TextView style="@style/T.Title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/profile_guide" />
+                <TextView style="@style/T.En" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textSize="12sp" android:text="@string/profile_guide_en" />
+                <ImageView android:layout_width="72dp" android:layout_height="60dp" android:layout_gravity="end" android:layout_marginTop="12dp" android:importantForAccessibility="no" android:src="@drawable/ill_guide" />
+            </LinearLayout>
+            <LinearLayout android:id="@+id/pact" style="@style/MiniCard" android:layout_marginStart="12dp">
+                <TextView style="@style/T.Title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/profile_pact" />
+                <TextView style="@style/T.En" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textSize="12sp" android:text="@string/profile_pact_en" />
+                <ImageView android:layout_width="72dp" android:layout_height="60dp" android:layout_gravity="end" android:layout_marginTop="12dp" android:importantForAccessibility="no" android:src="@drawable/ill_pact" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView android:id="@+id/logout" style="@style/T.Sub" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal" android:padding="8dp" android:text="@string/profile_logout" android:textSize="13sp" />
+        <include layout="@layout/view_watermark" />
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

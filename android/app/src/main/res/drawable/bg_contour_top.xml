@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item><shape><gradient android:angle="270" android:startColor="#F2E5F0C4" android:endColor="#00FFFFFF" /></shape></item>
+    <item android:drawable="@drawable/contour_lines" android:gravity="top|fill_horizontal" />
+</layer-list>
