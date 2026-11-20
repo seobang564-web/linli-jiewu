@@ -1,8 +1,9 @@
 # Android 客户端
 
-第一周 Java + XML 工程，包名固定为 `com.linlijiewu.app`，最低 API 24。
-当前入口为服务连接检查页，可真实调用 `/api/hello`；页面含初始、加载、成功、失败状态，销毁页面时取消请求。
-发现、发布、借还、聊天及登录注册页面按开发计划由各负责人接入。
+Java + XML 工程，包名固定为 `com.linlijiewu.app`，最低 API 24。
+启动页为登录注册（`ui/auth/AuthActivity`），进入后是底部导航的首页：发现、订单、消息、我的，中间按钮发布。
+全部页面按 `docs/ui-prototype.html` 实现，列表数据暂来自 `data/sample/SampleData`，登录为本地模拟，
+服务端接口就绪后替换。第一周的服务连接检查页（可真实调用 `/api/hello`）保留，从「我的 → 服务连接」进入。
 
 ## 工具版本
 
@@ -48,7 +49,16 @@ SHA1：97:05:24:BC:CF:1F:98:C9:D5:A8:26:12:55:57:9D:EB:1D:9C:D8:51
 
 ## 代码位置
 
-- `ui/bootstrap`：第一周连接检查入口，可由后续导航页面替换。
+- `ui/auth`、`ui/main`、`ui/discover`、`ui/browse`、`ui/item`、`ui/publish`、`ui/orders`、`ui/chat`、`ui/profile`：各页面。
+- `ui/common`：`Ui` 通用方法、`Motion` 动效、`LoadingDialog` 吉祥物加载弹层、`Session` 登录态。
+- `ui/bootstrap`：第一周服务连接检查页。
+- `data/model`：物品、订单、会话、消息等模型；`data/sample`：示例数据，接口接入后移除。
 - `data/remote`：Retrofit 接口、DTO、TokenProvider 与拦截器。
 - `data/repository`：页面调用入口。
-- `data/local`、其他 `ui/` 页面和 `util` 按后续模块需要添加。
+- `data/local`、`util` 按后续模块需要添加。
+
+## 界面资源
+
+- 颜色、字号、组件样式集中在 `res/values/colors.xml`、`styles.xml`、`dimens.xml`。
+- 图标为线性矢量图（`ic_*`、`ic_nav_*`），吉祥物插画为 `mascot_*`。
+- 转场与按压动画在 `res/anim`、`res/animator`、`res/interpolator`；系统关闭动画时自动跳过。
