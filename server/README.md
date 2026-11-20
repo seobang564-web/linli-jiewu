@@ -1,7 +1,7 @@
 # 服务端
 
 第一周工程：Java 17、Spring Boot 3.5.16、Maven 3.9.11 Wrapper、MyBatis 3.0.5、MySQL 8。
-Web、WebSocket、Validation、BCrypt 与 jjwt 依赖已固定版本；账户、借还和聊天业务按后续周计划实现。
+第 2 周增加注册登录、JWT、个人资料、图片上传和物品管理；借还、附近检索和聊天业务按后续周计划实现。WebP 使用 [TwelveMonkeys ImageIO](https://github.com/haraldk/TwelveMonkeys) 3.15.0 解码后重新编码为 PNG。
 
 ## 构建与测试
 
@@ -15,8 +15,8 @@ Web、WebSocket、Validation、BCrypt 与 jjwt 依赖已固定版本；账户、
 不需要全局安装 Maven；首次运行 Wrapper 会下载 Maven，缓存放在根目录 `.tools/`。
 产物固定为 `server/target/app.jar`。
 
-测试使用内存 H2 验证 HTTP、响应结构、MyBatis 基础表检查、缺表失败和错误脱敏；不会连接或修改云端数据库。
-MySQL 8 的实际连接及六张真实表须通过云端 `/api/health` 验收。
+测试使用内存 H2 验证账户密码、鉴权、双账户物品访问、图片归属、JPG/PNG/WebP 解码、回滚文件清理、物品状态约束及健康检查；不会连接云端数据库。
+MySQL 8 的真实迁移与七张表仍须在云端验收。已有环境先执行 `docs/migrations/002_images.sql`。
 
 ## 本地运行
 
@@ -28,20 +28,20 @@ MySQL 8 的实际连接及六张真实表须通过云端 `/api/health` 验收。
 ```
 
 需要 JDK 17；如本机默认 Java 不是 17，应在当前终端配置 `JAVA_HOME`。
-默认连接 `localhost:3306/linli_jiewu`，支持通过 `DB_URL` 覆盖。每个 MySQL 连接初始化会话时区为 `+08:00`。
+默认连接 `localhost:3306/linli_jiewu`，支持通过 `DB_URL` 覆盖。每个 MySQL 连接初始化会话时区为 `+08:00`。运行前需设置 `JWT_SECRET` 为至少 32 字节随机值的 Base64 编码；现有部署脚本生成的 48 字节密钥可直接沿用。
 `spring.sql.init.mode=never`，启动与部署均不会重新建表或清空数据。
 
 ## 验收
 
 - `GET /api/hello`：进程与路由检查，不依赖数据库。
-- `GET /api/health`：MyBatis 连接与六张基础表检查，失败返回 HTTP 503。
+- `GET /api/health`：MyBatis 连接与七张基础表检查，失败返回 HTTP 503。
 - 未实现业务接口不提供模拟成功响应。
 
 ## 配置
 
 `src/main/resources/application-example.yml` 是可提交的无密钥模板。
 生产配置放 `/opt/linli/application-prod.yml`；实际密码与 JWT 密钥通过 `/etc/linli/server.env` 注入。
-JWT 配置为后续登录功能预留，第一周没有实现业务鉴权。
+鉴权从请求 Token 解析身份；公开详情只返回物主 id/昵称，联系方式不公开。图片公开读取，上传和引用归属校验需要登录。
 
 | 环境变量 | 默认值 / 用途 |
 | --- | --- |
@@ -50,6 +50,8 @@ JWT 配置为后续登录功能预留，第一周没有实现业务鉴权。
 | `DB_USERNAME` | `linli` |
 | `DB_PASSWORD` | 数据库密码；生产环境必须提供 |
 | `UPLOAD_DIR` | 本地 `./uploads`；部署后 `/opt/linli/uploads` |
-| `JWT_SECRET` | 部署脚本生成，为第 2 周登录功能预留 |
+| `JWT_SECRET` | 部署脚本生成，必填，不允许空密钥启动 |
+
+无本地 MySQL 时，可在构建后运行 `scripts/Start-Week2-Smoke.ps1` 启动 H2 联调服务（默认 18080）。它使用测试配置和测试密钥，不连接生产库，重启后数据清空，仅供本地联调。
 
 打包部署见 [部署说明](../docs/部署说明.md)。

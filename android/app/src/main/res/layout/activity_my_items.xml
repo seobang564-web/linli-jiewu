@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root" android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:background="@color/background">
+    <include android:id="@+id/top" layout="@layout/view_top_bar" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/openId" style="@style/Btn.Outline"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="18dp" android:text="@string/item_open_id" />
+    <ScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1">
+        <LinearLayout android:id="@+id/list" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" />
+    </ScrollView>
+    <TextView android:id="@+id/state" style="@style/T.Body" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="18dp" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/more" style="@style/Btn.Outline"
+        android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="18dp" android:text="@string/page_more" />
+</LinearLayout>

@@ -19,6 +19,10 @@ public final class TokenInterceptor implements Interceptor {
         if (token != null && !token.trim().isEmpty()) {
             builder.header("Authorization", "Bearer " + token);
         }
-        return chain.proceed(builder.build());
+        Response response = chain.proceed(builder.build());
+        if (response.code() == 401 && token != null && !token.trim().isEmpty()) {
+            tokenProvider.onUnauthorized(token);
+        }
+        return response;
     }
 }

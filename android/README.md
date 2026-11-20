@@ -2,8 +2,8 @@
 
 Java + XML 工程，包名固定为 `com.linlijiewu.app`，最低 API 24。
 启动页为登录注册（`ui/auth/AuthActivity`），进入后是底部导航的首页：发现、订单、消息、我的，中间按钮发布。
-全部页面按 `docs/ui-prototype.html` 实现，列表数据暂来自 `data/sample/SampleData`，登录为本地模拟，
-服务端接口就绪后替换。第一周的服务连接检查页（可真实调用 `/api/hello`）保留，从「我的 → 服务连接」进入。
+全部页面按 `docs/ui-prototype.html` 实现。第 2 周的注册/登录、发布/编辑、图片上传、物品详情、我的发布已接真实服务端。
+发现/浏览、借还与聊天仍使用 `data/sample/SampleData`，由相应负责人后续接入。第一周服务连接检查页从“我的 → 服务连接”进入。
 
 ## 工具版本
 
@@ -31,8 +31,10 @@ Windows 路径中的盘符冒号需转义，例如 `sdk.dir=D\:/AndroidSdk`。
 ```
 
 脚本运行 APK 编译、网络层单元测试及 Lint。APK 位于 `app/build/outputs/apk/debug/app-debug.apk`。
-网络测试使用本地 MockWebServer，不会请求云服务器；检查 `/api/` 路径保留、统一响应解析和 Bearer Token 头。
+网络测试使用本地 MockWebServer，不请求云服务器；覆盖 `/api/` 路径、响应解析、Bearer Token、注册请求、multipart 字段、旧请求 401 回调与图片 URL 解析。
 正式网络请求异步执行，不打印 Token，也不关闭 TLS 证书校验。
+本地双账户验收：先运行 `scripts/Start-Week2-Smoke.ps1`，构建时用 `-PserverBaseUrl=http://10.0.2.2:18080/api/`。账户 A 发布后记下物品编号，账户 B 在“我的 → 按编号查看物品”读取同一物品。接口文档仍是唯一契约，附近检索不在本周替代实现。
+草稿暂存 SharedPreferences 和应用私有图片文件，按账户隔离；SQLite 草稿仍由第 3 周负责人实现。Token 会话不接受旧的模拟登录标记。
 
 ## 签名与高德交接
 

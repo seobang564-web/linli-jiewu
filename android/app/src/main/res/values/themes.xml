@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.LinliJiewu" parent="Theme.MaterialComponents.Light.NoActionBar">
+    <style name="Theme.LinliJiewu.Base" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="colorPrimary">@color/olive</item>
         <item name="colorPrimaryVariant">@color/olive_deep</item>
         <item name="colorOnPrimary">@color/on_primary</item>
@@ -14,13 +14,14 @@
         <item name="android:textColorHint">@color/hint</item>
         <item name="android:fontFamily">sans-serif</item>
         <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowLightNavigationBar">true</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowAnimationStyle">@style/Linli.Anim.Push</item>
         <item name="materialAlertDialogTheme">@style/Linli.AlertDialog</item>
         <item name="textInputStyle">@style/Widget.MaterialComponents.TextInputLayout.FilledBox</item>
     </style>
+
+    <style name="Theme.LinliJiewu" parent="Theme.LinliJiewu.Base" />
 
     <!-- 发布页：从底部弹出，后面的页面缩小变暗 -->
     <style name="Theme.LinliJiewu.Sheet">

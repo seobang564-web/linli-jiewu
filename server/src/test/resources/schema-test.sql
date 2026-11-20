@@ -1,6 +1,21 @@
--- Minimal test fixtures for the read-only readiness query; MySQL DDL stays in docs.
-CREATE TABLE users (id BIGINT PRIMARY KEY);
-CREATE TABLE items (id BIGINT PRIMARY KEY);
+-- H2 MySQL-mode fixtures; production schema and additive migration are in docs.
+CREATE TABLE users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(20) NOT NULL UNIQUE,
+    password_hash VARCHAR(100) NOT NULL, nickname VARCHAR(32) NOT NULL, contact VARCHAR(64),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE images (
+    image_id VARCHAR(64) PRIMARY KEY, owner_id BIGINT NOT NULL REFERENCES users(id),
+    file_name VARCHAR(100) NOT NULL UNIQUE, size_bytes BIGINT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE items (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY, owner_id BIGINT NOT NULL REFERENCES users(id),
+    title VARCHAR(50) NOT NULL, category VARCHAR(20) NOT NULL, description VARCHAR(500) NOT NULL DEFAULT '',
+    image_url VARCHAR(255), pickup_lat DECIMAL(10,7) NOT NULL, pickup_lng DECIMAL(10,7) NOT NULL,
+    pickup_label VARCHAR(100) NOT NULL, status VARCHAR(20) NOT NULL DEFAULT 'AVAILABLE', active_borrow_id BIGINT,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 CREATE TABLE borrows (id BIGINT PRIMARY KEY);
 CREATE TABLE borrow_logs (id BIGINT PRIMARY KEY);
 CREATE TABLE conversations (id BIGINT PRIMARY KEY);
