@@ -11,7 +11,15 @@ import com.linlijiewu.server.common.ApiResponse;
 @RequestMapping("/api")
 public class ItemController {
     private final ItemService items;
-    public ItemController(ItemService items) { this.items = items; }
+    private final ItemSearchService search;
+    public ItemController(ItemService items, ItemSearchService search) { this.items = items; this.search = search; }
+    @GetMapping("/items")
+    public ApiResponse<ItemModels.Page<ItemSearchService.Result>> search(@RequestParam double lat, @RequestParam double lng,
+            @RequestParam(defaultValue = "1000") int radius, @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String category, @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "1") int page, @RequestParam(defaultValue = "20") int size) {
+        return ApiResponse.success(search.search(lat, lng, radius, keyword, category, status, page, size));
+    }
     @GetMapping("/items/{id}")
     public ApiResponse<ItemModels.Detail> detail(@PathVariable long id,
             @RequestParam(required = false) Double lat, @RequestParam(required = false) Double lng,

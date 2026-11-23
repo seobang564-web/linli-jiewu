@@ -6,6 +6,7 @@ spring:
     password:
     hikari:
       connection-init-sql: ""
+      connection-timeout: 15000
   sql:
     init:
       mode: always

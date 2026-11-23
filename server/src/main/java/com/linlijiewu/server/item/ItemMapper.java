@@ -41,4 +41,26 @@ public interface ItemMapper {
             </script>
             """)
     long countMine(@Param("ownerId") long ownerId, @Param("statuses") List<String> statuses);
+
+    @Select("""
+            <script>
+            SELECT i.*, u.nickname AS owner_nickname FROM items i JOIN users u ON u.id = i.owner_id
+            WHERE i.status IN
+            <foreach collection="statuses" item="status" open="(" separator="," close=")">#{status}</foreach>
+            AND i.pickup_lat BETWEEN #{minLat} AND #{maxLat}
+            <if test="!allLongitudes">
+                <choose><when test="wrap">AND (i.pickup_lng &gt;= #{minLng} OR i.pickup_lng &lt;= #{maxLng})</when>
+                <otherwise>AND i.pickup_lng BETWEEN #{minLng} AND #{maxLng}</otherwise></choose>
+            </if>
+            <if test="category != null">AND i.category = #{category}</if>
+            <if test="keyword != null">
+                AND (LOCATE(LOWER(#{keyword}), LOWER(i.title)) &gt; 0
+                     OR LOCATE(LOWER(#{keyword}), LOWER(i.description)) &gt; 0)
+            </if>
+            </script>
+            """)
+    List<ItemRow> nearby(@Param("statuses") List<String> statuses, @Param("category") String category,
+            @Param("keyword") String keyword, @Param("minLat") double minLat, @Param("maxLat") double maxLat,
+            @Param("minLng") double minLng, @Param("maxLng") double maxLng,
+            @Param("wrap") boolean wrap, @Param("allLongitudes") boolean allLongitudes);
 }

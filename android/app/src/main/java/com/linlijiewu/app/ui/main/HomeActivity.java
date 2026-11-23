@@ -44,6 +44,7 @@ public class HomeActivity extends AppCompatActivity {
         EdgeToEdge.enable(this);
         binding = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        binding.navBadge.setVisibility(View.GONE);
         Ui.padBottom(binding.navRow);
 
         binding.navDiscover.setOnClickListener(v -> select(TAB_DISCOVER, true));
@@ -66,9 +67,14 @@ public class HomeActivity extends AppCompatActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        setIntent(intent);
         String tab = intent.getStringExtra(EXTRA_TAB);
         if (tab != null) {
             select(tab, true);
+        }
+        if (intent.hasExtra("orders_owner")) {
+            Fragment orders = getSupportFragmentManager().findFragmentByTag(TAB_ORDERS);
+            if (orders instanceof OrdersFragment) { ((OrdersFragment) orders).showRole(intent.getBooleanExtra("orders_owner", false)); }
         }
     }
 
@@ -101,7 +107,9 @@ public class HomeActivity extends AppCompatActivity {
     private Fragment create(String tab) {
         switch (tab) {
             case TAB_ORDERS:
-                return new OrdersFragment();
+                OrdersFragment orders = new OrdersFragment();
+                Bundle args = new Bundle(); args.putBoolean("owner", getIntent().getBooleanExtra("orders_owner", false));
+                orders.setArguments(args); return orders;
             case TAB_MESSAGES:
                 return new MessagesFragment();
             case TAB_PROFILE:

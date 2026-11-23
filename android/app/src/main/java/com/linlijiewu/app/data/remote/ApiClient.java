@@ -9,15 +9,18 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public final class ApiClient {
+    private static LinliApi instance;
     private ApiClient() {
     }
 
-    public static LinliApi authenticated(Context context) {
+    public static synchronized LinliApi authenticated(Context context) {
+        if (instance != null) { return instance; }
         Context app = context.getApplicationContext();
-        return create(BuildConfig.SERVER_BASE_URL, new TokenProvider() {
+        instance = create(BuildConfig.SERVER_BASE_URL, new TokenProvider() {
             @Override public String getToken() { return Session.token(app); }
             @Override public void onUnauthorized(String rejectedToken) { Session.reject(app, rejectedToken); }
         });
+        return instance;
     }
 
     public static LinliApi create(String baseUrl, TokenProvider tokenProvider) {

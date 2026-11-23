@@ -1,7 +1,7 @@
 # 服务端
 
 第一周工程：Java 17、Spring Boot 3.5.16、Maven 3.9.11 Wrapper、MyBatis 3.0.5、MySQL 8。
-第 2 周增加注册登录、JWT、个人资料、图片上传和物品管理；借还、附近检索和聊天业务按后续周计划实现。WebP 使用 [TwelveMonkeys ImageIO](https://github.com/haraldk/TwelveMonkeys) 3.15.0 解码后重新编码为 PNG。
+第 2 周增加注册登录、JWT、个人资料、图片上传和物品管理；第 3 周实现附近检索、借还申请事务、幂等、状态机和订单查询。自动超时与聊天业务留待第 4 周。WebP 使用 [TwelveMonkeys ImageIO](https://github.com/haraldk/TwelveMonkeys) 3.15.0 解码后重新编码为 PNG。
 
 ## 构建与测试
 
@@ -16,7 +16,11 @@
 产物固定为 `server/target/app.jar`。
 
 测试使用内存 H2 验证账户密码、鉴权、双账户物品访问、图片归属、JPG/PNG/WebP 解码、回滚文件清理、物品状态约束及健康检查；不会连接云端数据库。
+借还测试覆盖完整借还/拒绝归还流程、34 组非法状态操作、所有操作的身份校验、联系方式隐藏、快照不随物品编辑改变、幂等重试、并发抢借/接受/取消/下架/再次借用和日志失败时事务回滚。测试配置将 H2 首次连接等待设为 15 秒，生产连接超时保持原配置。
+附近检索增加 6 项集成测试，覆盖 499/500/501 米、按原始距离过滤再取整、跨日期变更线和极区、字面子串关键词、状态/分类、排序分页与预约后移出/取消后恢复。Maven verify 共 38 项测试通过。
 MySQL 8 的真实迁移与七张表仍须在云端验收。已有环境先执行 `docs/migrations/002_images.sql`。
+
+第 3 周没有生产表结构增量；`borrows`、`borrow_logs`、`items.active_borrow_id` 与幂等唯一键已在原始 `docs/数据库设计.sql` 中定义。部署前检查实际表字段、`uk_borrows_request(borrower_id, request_id)` 与 InnoDB 引擎；不要重复执行完整建表脚本。
 
 ## 本地运行
 
@@ -53,5 +57,10 @@ MySQL 8 的真实迁移与七张表仍须在云端验收。已有环境先执行
 | `JWT_SECRET` | 部署脚本生成，必填，不允许空密钥启动 |
 
 无本地 MySQL 时，可在构建后运行 `scripts/Start-Week2-Smoke.ps1` 启动 H2 联调服务（默认 18080）。它使用测试配置和测试密钥，不连接生产库，重启后数据清空，仅供本地联调。
+
+另开 PowerShell 7 终端运行 `scripts/Verify-Week3.ps1`，自动创建测试账户/物品，验证申请幂等、借还、拒绝验收、权限、日志和归还后释放，最后下架本次物品。结果不含密码或 Token。脚本默认只允许回环地址；人工执行远端验收需明确指定 `-BaseUrl` 和 `-AllowRemote`，会在该服务创建测试数据。
+
+借还入口为 `/api/borrows`，全部要求 Token；支持 POST 申请、GET 分页、GET `/{id}`、GET `/{id}/logs`，以及 POST `/{id}/accept|reject|cancel|handover|return|confirm-return|deny-return`。状态请求体可省略；有请求体时使用 JSON。接受申请在锁内复核 12 小时到期时间；自动取消扫描与 WebSocket 推送尚未实现。
+`GET /api/items` 提供真实附近检索：参数绑定做经纬度包围框粗筛，Java Haversine 精确过滤，原始距离与半径比较，返回整数 distanceM 后按 distanceM/id 排序。关键词为标题/描述字面子串，`%` 和 `_` 不作为通配符；默认仅 AVAILABLE，不允许查询 OFFLINE。
 
 打包部署见 [部署说明](../docs/部署说明.md)。

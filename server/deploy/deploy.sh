@@ -37,6 +37,26 @@ if ! mysql --batch --skip-column-names -e \
     exit 1
 fi
 
+# Week 3 uses the original borrow tables; reject partial schemas before replacing the JAR.
+if ! mysql --batch --skip-column-names -e \
+    'SELECT id, item_id, owner_id, borrower_id, conversation_id, status, due_at, expires_at, note, cancel_type, cancel_reason, request_id, item_snapshot, created_at, updated_at FROM linli_jiewu.borrows LIMIT 0;
+     SELECT id, borrow_id, actor_id, from_status, to_status, reason, created_at FROM linli_jiewu.borrow_logs LIMIT 0;
+     SELECT id, active_borrow_id, status FROM linli_jiewu.items LIMIT 0;
+     SELECT id, item_id, borrower_id FROM linli_jiewu.conversations LIMIT 0' >/dev/null; then
+    echo '借还表字段未就绪。请按 docs/数据库设计.sql 核对已有表；不要清库或重复执行整份建表脚本。现有 JAR 未替换。' >&2
+    exit 1
+fi
+borrow_key=$(mysql --batch --skip-column-names -e \
+    "SELECT GROUP_CONCAT(COLUMN_NAME ORDER BY SEQ_IN_INDEX) FROM information_schema.STATISTICS
+     WHERE TABLE_SCHEMA = 'linli_jiewu' AND TABLE_NAME = 'borrows' AND INDEX_NAME = 'uk_borrows_request' AND NON_UNIQUE = 0")
+transactional_tables=$(mysql --batch --skip-column-names -e \
+    "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = 'linli_jiewu'
+     AND TABLE_NAME IN ('items', 'borrows', 'borrow_logs') AND ENGINE = 'InnoDB'")
+if [[ "$borrow_key" != 'borrower_id,request_id' || "$transactional_tables" != '3' ]]; then
+    echo '借还幂等唯一键或 InnoDB 引擎不符合约定，现有 JAR 未替换。请先核对数据库结构。' >&2
+    exit 1
+fi
+
 if ! id linli >/dev/null 2>&1; then
     adduser --system --group --no-create-home linli
 fi
