@@ -225,18 +225,6 @@
                         <TextView style="@style/T.Big" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/discover_lend" />
                         <TextView style="@style/T.En" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/discover_lend_en" />
                     </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/lendBadge"
-                        style="@style/T.Pill"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="top|end"
-                        android:layout_marginTop="-16dp"
-                        android:layout_marginEnd="18dp"
-                        android:background="@drawable/bg_pill_olive"
-                        android:text="@string/discover_lend_badge"
-                        android:textColor="@color/surface" />
                 </FrameLayout>
             </LinearLayout>
 

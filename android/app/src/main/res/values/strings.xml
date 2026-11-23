@@ -65,7 +65,6 @@
     <string name="discover_borrow_en">Borrow</string>
     <string name="discover_lend">借出去</string>
     <string name="discover_lend_en">Lend</string>
-    <string name="discover_lend_badge">1 分钟发布!</string>
     <string name="discover_nearest">离你最近</string>
     <string name="discover_nearest_en">Nearest first</string>
     <string name="loading_search">正在搜索附近</string>
