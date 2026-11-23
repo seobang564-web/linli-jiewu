@@ -15,8 +15,13 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import com.linlijiewu.app.R;
 import com.linlijiewu.app.data.model.BorrowStatus;
-import com.linlijiewu.app.data.model.Item;
-import com.linlijiewu.app.data.sample.SampleData;
+import com.linlijiewu.app.data.remote.*;
+import com.linlijiewu.app.ui.common.Session;
+import com.linlijiewu.app.ui.auth.AuthActivity;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.google.android.material.button.MaterialButton;
+import android.widget.EditText;
+import retrofit2.Call;
 import com.linlijiewu.app.databinding.ActivityOrderDetailBinding;
 import com.linlijiewu.app.ui.chat.ChatActivity;
 import com.linlijiewu.app.ui.common.Motion;
@@ -24,7 +29,7 @@ import com.linlijiewu.app.ui.common.Ui;
 
 /**
  * 订单详情（GET /borrows/{id} + /logs）：大号状态 + 五步进度，接受后露出对方联系方式，底部是订单记录。
- * 示例展示的是借入方视角的“待交接”订单。
+ * 仅渲染真实接口与按当前身份可执行的状态操作。
  */
 public class OrderDetailActivity extends AppCompatActivity {
     private static final String EXTRA_ID = "order_id";
@@ -32,6 +37,11 @@ public class OrderDetailActivity extends AppCompatActivity {
             BorrowStatus.BORROWING, BorrowStatus.RETURNING, BorrowStatus.COMPLETED};
 
     private ActivityOrderDetailBinding binding;
+    private Call<?> detailCall, logCall, actionCall;
+    private long id;
+    private int sequence;
+    private boolean changing;
+    private BorrowData order;
 
     public static Intent intent(Context context, long orderId) {
         return new Intent(context, OrderDetailActivity.class).putExtra(EXTRA_ID, orderId);
@@ -48,33 +58,109 @@ public class OrderDetailActivity extends AppCompatActivity {
         Ui.back(this, binding.top.back);
         binding.top.title.setText(R.string.order_detail_title);
 
-        Item item = SampleData.item(SampleData.DEMO_ITEM_ID);
-        BorrowStatus status = BorrowStatus.ACCEPTED;
-        binding.statusTitle.setText(status.label);
-        renderSteps(status.ordinal());
-        binding.pickupLabel.setText(item.pickupLabel);
-        binding.pickupAddress.setText(SampleData.PICKUP_POIS[0][1]);
-        binding.contactValue.setText("微信 shuyu_01");
-        Ui.thumb(binding.thumb, item, 14, 0.2f);
-        binding.title.setText(item.title);
-        binding.snapshot.setText(getString(R.string.order_snapshot, getString(item.category.label)));
-        addInfo(R.string.order_due, "2026-11-22 18:00");
-        addInfo(R.string.order_created, "2026-11-19 20:12:36");
-        addInfo(R.string.order_note, getString(R.string.apply_note_default));
-        addInfo(R.string.order_no, String.valueOf(getIntent().getLongExtra(EXTRA_ID, 1024)));
-        addLog("物主 舒煜 接受了申请", "2026-11-19 20:30", true);
-        addLog("你 提交了借用申请", "2026-11-19 20:12", false);
-
-        binding.contactOwner.setOnClickListener(v -> startActivity(ChatActivity.intent(this, item.id)));
+        id = getIntent().getLongExtra(EXTRA_ID, 0);
+        binding.contactOwner.setVisibility(View.GONE);
+        binding.call.setVisibility(View.GONE); binding.navigate.setVisibility(View.GONE);
         binding.copyContact.setOnClickListener(v -> {
             ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
             cm.setPrimaryClip(ClipData.newPlainText("contact", binding.contactValue.getText()));
             Toast.makeText(this, R.string.order_copied, Toast.LENGTH_SHORT).show();
         });
-        binding.call.setOnClickListener(v -> Ui.comingSoon(this));
-        binding.navigate.setOnClickListener(v -> Ui.comingSoon(this));
-        binding.cancel.setOnClickListener(v -> Ui.comingSoon(this));
+        binding.cancel.setOnClickListener(v -> load());
         Motion.stagger(binding.content, 140);
+    }
+
+    @Override protected void onResume() { super.onResume(); load(); }
+    private void load() {
+        if (changing) { return; }
+        if (!Session.isLoggedIn(this)) { startActivity(new Intent(this, AuthActivity.class).putExtra("relogin", true)); finish(); return; }
+        if (id <= 0) { error(getString(R.string.item_id_invalid)); return; }
+        int query = ++sequence;
+        if (detailCall != null) { detailCall.cancel(); } if (logCall != null) { logCall.cancel(); }
+        binding.stateActions.removeAllViews(); binding.contactValue.setText(R.string.order_contact_hidden); binding.copyContact.setEnabled(false);
+        binding.statusTitle.setText(R.string.item_load);
+        var call = ApiClient.authenticated(this).borrow(id); detailCall = call;
+        call.enqueue(new ApiCallback<>(this, value -> { if (query == sequence) { render(value); loadLogs(query); } }, this::error, () -> { }));
+    }
+    private void render(BorrowData value) {
+        order = value;
+        BorrowStatus status = BorrowStatus.valueOf(order.status);
+        binding.statusTitle.setText(getString(status.label) + (order.overdue ? " · " + getString(R.string.order_overdue) : ""));
+        int hint;
+        switch (status) {
+            case PENDING: hint = R.string.order_hint_pending; break;
+            case ACCEPTED: hint = R.string.order_hint_accepted; break;
+            case BORROWING: hint = R.string.order_hint_borrowing; break;
+            case RETURNING: hint = R.string.order_hint_returning; break;
+            case COMPLETED: hint = R.string.order_hint_completed; break;
+            default: hint = R.string.order_hint_cancelled;
+        }
+        binding.statusHint.setText(hint);
+        renderSteps(status == BorrowStatus.CANCELLED ? 0 : status.ordinal());
+        binding.steps.setVisibility(status == BorrowStatus.CANCELLED ? View.GONE : View.VISIBLE);
+        binding.stepTrack.setVisibility(status == BorrowStatus.CANCELLED ? View.GONE : View.VISIBLE);
+        binding.stepFill.setVisibility(status == BorrowStatus.CANCELLED ? View.GONE : View.VISIBLE);
+        binding.pickupLabel.setText(order.item.pickupLabel);
+        binding.pickupAddress.setText(getString(R.string.item_coordinates, order.item.pickupLat, order.item.pickupLng));
+        BorrowData.Person peer = order.owner.id == Session.userId(this) ? order.borrower : order.owner;
+        binding.contactLabel.setText(order.owner.id == Session.userId(this) ? R.string.order_contact_borrower : R.string.order_contact_owner);
+        boolean visible = !"PENDING".equals(order.status) && !"CANCELLED".equals(order.status);
+        binding.contactValue.setText(!visible ? getString(R.string.order_contact_hidden)
+                : peer.contact == null || peer.contact.isEmpty() ? getString(R.string.order_contact_empty) : peer.contact);
+        binding.copyContact.setEnabled(visible && peer.contact != null && !peer.contact.isEmpty());
+        binding.copyContact.setAlpha(binding.copyContact.isEnabled() ? 1f : 0.35f);
+        Ui.thumb(binding.thumb, order.item, 14, 0); binding.itemTitle.setText(order.item.title); binding.snapshot.setText(R.string.order_snapshot_real);
+        binding.infoRows.removeAllViews(); addInfo(R.string.order_due, Ui.date(order.dueAt));
+        addInfo(R.string.order_created, Ui.date(order.createdAt)); addInfo(R.string.order_note, order.note);
+        addInfo(R.string.order_no, Long.toString(order.id));
+        if (order.cancelReason != null) { addInfo(R.string.order_action_reason, order.cancelReason); }
+        renderActions();
+    }
+    private void renderActions() {
+        binding.stateActions.removeAllViews();
+        for (String action : BorrowActions.forUser(order, Session.userId(this))) {
+            MaterialButton button = new MaterialButton(this); button.setText(Ui.borrowActionLabel(action));
+            button.setEnabled(!changing); button.setOnClickListener(v -> confirm(action)); binding.stateActions.addView(button);
+        }
+    }
+    private void confirm(String action) {
+        if (changing) { return; }
+        EditText reason = new EditText(this); reason.setHint(R.string.order_action_reason);
+        reason.setFilters(new android.text.InputFilter[]{new android.text.InputFilter.LengthFilter(200)});
+        reason.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        var dialog = new MaterialAlertDialogBuilder(this)
+                .setTitle(getString(R.string.order_action_confirm, getString(Ui.borrowActionLabel(action))))
+                .setNegativeButton(android.R.string.cancel, null);
+        boolean needsReason = "cancel".equals(action) || "reject".equals(action) || "deny-return".equals(action);
+        if (needsReason) { dialog.setView(reason); }
+        dialog.setPositiveButton(android.R.string.ok, (d, w) -> change(action, needsReason ? reason.getText().toString() : null)).show();
+    }
+    private void change(String action, String reason) {
+        if (changing) { return; } changing = true; renderActions();
+        var call = ApiClient.authenticated(this).borrowAction(id, action, new BorrowData.Action(reason)); actionCall = call;
+        call.enqueue(new ApiCallback<>(this, value -> {
+            Toast.makeText(this, R.string.order_action_done, Toast.LENGTH_SHORT).show(); load();
+        }, message -> { error(message); load(); }, () -> { changing = false; }));
+    }
+    private void loadLogs(int query) {
+        binding.timeline.removeAllViews();
+        var call = ApiClient.authenticated(this).borrowLogs(id); logCall = call;
+        call.enqueue(new ApiCallback<>(this, logs -> {
+            if (query != sequence) { return; } binding.timeline.removeAllViews();
+            for (int i = logs.size() - 1; i >= 0; i--) {
+                BorrowData.Log log = logs.get(i);
+                String actor = log.actor == null ? getString(R.string.order_actor_system) : log.actor.nickname;
+                String from = log.fromStatus == null ? getString(R.string.order_initial) : getString(BorrowStatus.valueOf(log.fromStatus).label);
+                String to = getString(BorrowStatus.valueOf(log.toStatus).label);
+                addLog(getString(R.string.order_log_real, actor, from, to, log.reason == null ? "" : " · " + log.reason), Ui.date(log.createdAt), i == logs.size() - 1);
+            }
+            if (logs.isEmpty()) { binding.timeline.addView(Ui.message(this, getString(R.string.order_logs_empty), null)); }
+        }, message -> { if (query == sequence) { binding.timeline.addView(Ui.message(this, getString(R.string.nearby_retry, message), () -> loadLogs(query))); } }, () -> { }));
+    }
+    private void error(String message) { Toast.makeText(this, message, Toast.LENGTH_LONG).show(); }
+    @Override protected void onDestroy() {
+        sequence++; if (detailCall != null) { detailCall.cancel(); } if (logCall != null) { logCall.cancel(); }
+        if (actionCall != null) { actionCall.cancel(); } super.onDestroy();
     }
 
     private void renderSteps(int current) {

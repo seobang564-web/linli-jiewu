@@ -26,6 +26,7 @@ import retrofit2.Call;
 public class ProfileFragment extends Fragment {
     private FragmentProfileBinding binding;
     private Call<?> activeCall;
+    private Call<?> borrowedCountCall, lentCountCall;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle state) {
@@ -44,8 +45,8 @@ public class ProfileFragment extends Fragment {
         binding.weekCount.setText(R.string.profile_real_session);
         binding.findItem.setOnClickListener(v -> MyItemsActivity.openId(requireContext()));
         binding.edit.setOnClickListener(v -> Ui.comingSoon(requireContext()));
-        binding.statIn.setOnClickListener(v -> openOrders());
-        binding.statOut.setOnClickListener(v -> openOrders());
+        binding.statIn.setOnClickListener(v -> openOrders(false));
+        binding.statOut.setOnClickListener(v -> openOrders(true));
         binding.statItems.setOnClickListener(v -> openMine());
         binding.guide.setOnClickListener(v -> Ui.comingSoon(requireContext()));
         binding.pact.setOnClickListener(v -> Ui.comingSoon(requireContext()));
@@ -78,7 +79,7 @@ public class ProfileFragment extends Fragment {
             final int label = f[1];
             cell.getRoot().setOnClickListener(v -> {
                 if (label == R.string.profile_f_in || label == R.string.profile_f_out) {
-                    openOrders();
+                    openOrders(label == R.string.profile_f_out);
                 } else if (label == R.string.profile_f_server) {
                     startActivity(new Intent(requireContext(), MainActivity.class));
                 } else if (label == R.string.profile_f_items) {
@@ -91,8 +92,8 @@ public class ProfileFragment extends Fragment {
         }
     }
 
-    private void openOrders() {
-        startActivity(HomeActivity.intent(requireContext(), HomeActivity.TAB_ORDERS));
+    private void openOrders(boolean owner) {
+        startActivity(HomeActivity.intent(requireContext(), HomeActivity.TAB_ORDERS).putExtra("orders_owner", owner));
     }
 
     private void openMine() {
@@ -112,7 +113,13 @@ public class ProfileFragment extends Fragment {
         binding.statItemsValue.setText("0");
         binding.statInValue.setText(R.string.stats_pending); binding.statOutValue.setText(R.string.stats_pending);
         if (activeCall != null) { activeCall.cancel(); }
+        if (borrowedCountCall != null) { borrowedCountCall.cancel(); }
+        if (lentCountCall != null) { lentCountCall.cancel(); }
         if (loggedIn) {
+            var borrowed = ApiClient.authenticated(requireContext()).borrows("borrower", null, 1, 1); borrowedCountCall = borrowed;
+            borrowed.enqueue(new ApiCallback<>(requireActivity(), data -> { if (binding != null) { binding.statInValue.setText(Long.toString(data.total)); } }, m -> { }, () -> { }));
+            var lent = ApiClient.authenticated(requireContext()).borrows("owner", null, 1, 1); lentCountCall = lent;
+            lent.enqueue(new ApiCallback<>(requireActivity(), data -> { if (binding != null) { binding.statOutValue.setText(Long.toString(data.total)); } }, m -> { }, () -> { }));
             var call = ApiClient.authenticated(requireContext()).mine(1, 1); activeCall = call;
             call.enqueue(new ApiCallback<>(requireActivity(), data -> {
                 if (binding != null) { binding.statItemsValue.setText(Long.toString(data.total)); }
@@ -149,6 +156,8 @@ public class ProfileFragment extends Fragment {
     @Override
     public void onDestroyView() {
         if (activeCall != null) { activeCall.cancel(); }
+        if (borrowedCountCall != null) { borrowedCountCall.cancel(); }
+        if (lentCountCall != null) { lentCountCall.cancel(); }
         binding = null;
         super.onDestroyView();
     }

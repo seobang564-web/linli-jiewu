@@ -38,9 +38,10 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.linlijiewu.app.BuildConfig;
 import com.linlijiewu.app.R;
 import com.linlijiewu.app.data.model.Category;
-import com.linlijiewu.app.data.model.Item;
 import com.linlijiewu.app.data.model.ItemStatus;
-import com.linlijiewu.app.data.sample.SampleData;
+import com.linlijiewu.app.data.remote.*;
+import com.linlijiewu.app.ui.common.SearchLocation;
+import retrofit2.Call;
 import com.linlijiewu.app.databinding.FragmentDiscoverBinding;
 import com.linlijiewu.app.databinding.ItemCategoryBinding;
 import com.linlijiewu.app.databinding.ItemNearbyBinding;
@@ -58,7 +59,7 @@ import java.util.List;
 /**
  * 发现页：高德地图 + 当前位置 + 附近物品。
  * 地图流程不变：隐私合规弹窗 → 创建 MapView → 申请定位权限 → 持续定位，首次成功时把视角移到当前位置。
- * 定位成功后在周围摆放物品标记与搜索半径圈；物品目前来自 {@link SampleData}，GET /items 接入后替换。
+ * 物品来自真实附近检索接口，标记使用物品交接点坐标。
  */
 public class DiscoverFragment extends Fragment {
     private static final String KEY_MAP_STATE = "map_state";
@@ -83,6 +84,10 @@ public class DiscoverFragment extends Fragment {
     private Circle radiusCircle;
     private final List<Marker> markers = new ArrayList<>();
     private boolean entered;
+    private final List<ItemData> items = new ArrayList<>();
+    private long total;
+    private int querySequence;
+    private Call<?> searchCall;
 
     private final ActivityResultLauncher<String[]> permissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
@@ -163,8 +168,7 @@ public class DiscoverFragment extends Fragment {
                     c.setSelected(c == v);
                 }
                 Motion.bounce(v);
-                // 原型阶段模拟一次检索请求；GET /items 接入后在回调里刷新
-                LoadingDialog.run(requireContext(), R.string.loading_search, () -> applyRadius(r));
+                applyRadius(r);
             });
         }
     }
@@ -175,7 +179,7 @@ public class DiscoverFragment extends Fragment {
         }
         int old = radius;
         radius = newRadius;
-        renderList();
+        reloadItems();
         Motion.stagger(binding.nearbyList, 0);
         if (map != null && center != null) {
             if (radiusCircle != null) {
@@ -214,33 +218,62 @@ public class DiscoverFragment extends Fragment {
     }
 
     private void renderList() {
-        List<Item> items = SampleData.itemsWithin(radius);
-        int nearest = items.isEmpty() ? 0 : items.get(0).distanceM;
-        binding.summary.setText(getString(R.string.discover_summary, radiusLabel(radius), items.size(), nearest));
+        binding.summary.setText(center == null ? getString(R.string.nearby_locating)
+                : getString(R.string.nearby_count, radiusLabel(radius), total));
         binding.nearbyList.removeAllViews();
+        if (items.isEmpty()) {
+            binding.nearbyList.addView(Ui.message(requireContext(), center == null ? getString(R.string.nearby_locating)
+                    : getString(R.string.nearby_empty), this::reloadItems));
+        }
         LayoutInflater inflater = getLayoutInflater();
         for (int i = 0; i < Math.min(items.size(), 6); i++) {
-            Item item = items.get(i);
+            ItemData item = items.get(i);
             ItemNearbyBinding row = ItemNearbyBinding.inflate(inflater, binding.nearbyList, false);
             Ui.thumb(row.thumb, item, 18, 0.2f);
             row.title.setText(item.title);
             row.tags.addView(Ui.tag(requireContext(), item.pickupLabel));
-            if (item.status != ItemStatus.AVAILABLE) {
+            if (!"AVAILABLE".equals(item.status)) {
                 TextView pill = new TextView(requireContext(), null, 0, R.style.T_Pill);
-                Ui.statusPill(pill, item.status);
+                Ui.statusPill(pill, ItemStatus.valueOf(item.status));
                 row.tags.addView(pill);
             }
             row.distance.setText(Ui.distance(requireContext(), item.distanceM, 20));
             row.getRoot().setOnClickListener(v -> openItem(item));
             binding.nearbyList.addView(row.getRoot());
         }
+        if (!items.isEmpty()) {
+            binding.nearbyList.addView(Ui.message(requireContext(), getString(R.string.nearby_all),
+                    () -> startActivity(new Intent(requireContext(), BrowseActivity.class))));
+        }
+    }
+
+    private void reloadItems() {
+        if (binding == null || center == null) { return; }
+        SearchLocation.save(requireContext(), center.latitude, center.longitude, radius);
+        int sequence = ++querySequence;
+        if (searchCall != null) { searchCall.cancel(); }
+        items.clear(); total = 0; renderList(); placeMarkers();
+        binding.summary.setText(R.string.nearby_loading);
+        var call = ApiClient.authenticated(requireContext()).nearby(center.latitude, center.longitude, radius, null, null, 1, 50);
+        searchCall = call;
+        call.enqueue(new ApiCallback<>(requireActivity(), data -> {
+            if (binding == null || sequence != querySequence) { return; }
+            items.clear(); if (data.list != null) { items.addAll(data.list); } total = data.total;
+            renderList(); placeMarkers();
+        }, message -> {
+            if (binding == null || sequence != querySequence) { return; }
+            binding.summary.setText(getString(R.string.nearby_retry, message));
+            binding.summary.setOnClickListener(v -> reloadItems());
+            binding.nearbyList.removeAllViews();
+            binding.nearbyList.addView(Ui.message(requireContext(), getString(R.string.nearby_retry, message), this::reloadItems));
+        }, () -> { }));
     }
 
     private String radiusLabel(int r) {
         return r < 1000 ? getString(R.string.radius_500) : (r / 1000) + "km";
     }
 
-    private void openItem(Item item) {
+    private void openItem(ItemData item) {
         startActivity(ItemDetailActivity.intent(requireContext(), item.id));
     }
 
@@ -282,8 +315,8 @@ public class DiscoverFragment extends Fragment {
         map.setOnMyLocationChangeListener(this::onMyLocationChanged);
         map.setOnMarkerClickListener(marker -> {
             Object tag = marker.getObject();
-            if (tag instanceof Item) {
-                openItem((Item) tag);
+            if (tag instanceof ItemData) {
+                openItem((ItemData) tag);
                 return true;
             }
             return false;
@@ -386,32 +419,29 @@ public class DiscoverFragment extends Fragment {
         }
         radiusCircle = map.addCircle(new CircleOptions().center(here).radius(radius)
                 .fillColor(0x126A8A14).strokeColor(0xB06A8A14).strokeWidth(Ui.dp(requireContext(), 1.5f)));
-        placeMarkers();
+        reloadItems();
     }
 
     /** 在当前位置周围摆放半径内的物品标记，依次弹出。 */
     private void placeMarkers() {
+        if (map == null || binding == null || center == null) { return; }
         for (Marker m : markers) {
             m.remove();
         }
         markers.clear();
-        List<Item> items = SampleData.itemsWithin(radius);
-        double metersPerLat = 111320.0;
-        double metersPerLng = 111320.0 * Math.cos(Math.toRadians(center.latitude));
         LayoutInflater inflater = getLayoutInflater();
         for (int i = 0; i < items.size(); i++) {
-            Item item = items.get(i);
+            ItemData item = items.get(i);
             ViewMapPinBinding pin = ViewMapPinBinding.inflate(inflater);
-            pin.pinIcon.setImageResource(item.category.pinIcon);
-            if (item.status != ItemStatus.AVAILABLE) {
+            pin.pinIcon.setImageResource(Ui.category(item.category).pinIcon);
+            if (!"AVAILABLE".equals(item.status)) {
                 pin.pinBody.setBackgroundResource(R.drawable.bg_pin_gray);
             }
-            if (item.id == SampleData.DEMO_ITEM_ID) {
+            if (i == 0) {
                 pin.pinLabel.setVisibility(View.VISIBLE);
-                pin.pinLabel.setText(item.title.substring(0, 4) + " · " + item.distanceM + "m");
+                pin.pinLabel.setText(item.title.substring(0, Math.min(4, item.title.length())) + " · " + item.distanceM + "m");
             }
-            LatLng pos = new LatLng(center.latitude + item.northM / metersPerLat,
-                    center.longitude + item.eastM / metersPerLng);
+            LatLng pos = new LatLng(item.pickupLat, item.pickupLng);
             Marker marker = map.addMarker(new MarkerOptions().position(pos).anchor(0.5f, 1f)
                     .icon(BitmapDescriptorFactory.fromView(pin.getRoot())));
             marker.setObject(item);
@@ -511,6 +541,12 @@ public class DiscoverFragment extends Fragment {
         if (state == State.PERMISSION_DENIED && hasLocationPermission()) {
             startLocating();
         }
+        if (center != null && !isHidden()) { reloadItems(); }
+    }
+
+    @Override public void onHiddenChanged(boolean hidden) {
+        super.onHiddenChanged(hidden);
+        if (!hidden) { reloadItems(); }
     }
 
     @Override
@@ -533,6 +569,8 @@ public class DiscoverFragment extends Fragment {
 
     @Override
     public void onDestroyView() {
+        querySequence++;
+        if (searchCall != null) { searchCall.cancel(); }
         if (mapView != null) {
             map.setMyLocationEnabled(false);
             mapView.onDestroy();
@@ -542,6 +580,7 @@ public class DiscoverFragment extends Fragment {
         markers.clear();
         radiusCircle = null;
         binding = null;
+        center = null;
         super.onDestroyView();
     }
 }

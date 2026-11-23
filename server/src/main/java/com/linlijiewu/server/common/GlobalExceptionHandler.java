@@ -14,6 +14,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.dao.DataAccessResourceFailureException;
 
 @RestControllerAdvice
@@ -35,6 +36,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MissingServletRequestParameterException.class,
             MethodArgumentTypeMismatchException.class, MissingServletRequestPartException.class,
+            HttpMediaTypeNotSupportedException.class,
             org.springframework.web.multipart.MultipartException.class})
     public ResponseEntity<ApiResponse<Void>> handleBadInput(Exception exception) {
         return ResponseEntity.badRequest().body(ApiResponse.failure(40001, "请求参数或格式不正确"));

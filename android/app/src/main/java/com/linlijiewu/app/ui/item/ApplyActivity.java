@@ -12,8 +12,16 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import com.linlijiewu.app.R;
-import com.linlijiewu.app.data.model.Item;
-import com.linlijiewu.app.data.sample.SampleData;
+import com.linlijiewu.app.data.remote.*;
+import com.linlijiewu.app.ui.common.Session;
+import com.linlijiewu.app.ui.auth.AuthActivity;
+import com.google.gson.Gson;
+import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import android.widget.Toast;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
+import java.util.UUID;
+import retrofit2.Call;
 import com.linlijiewu.app.databinding.ActivityApplyBinding;
 import com.linlijiewu.app.ui.common.LoadingDialog;
 import com.linlijiewu.app.ui.common.Motion;
@@ -32,6 +40,17 @@ public class ApplyActivity extends AppCompatActivity {
     private int dayIndex = 3;
     private String time = "18:00";
     private final String[] dayLabels = new String[5];
+    private long itemId, accountId;
+    private Calendar baseDay;
+    private BorrowData.Create pending;
+    private Call<?> active;
+    private boolean submitting;
+    private TextView retryHint;
+
+    public static void open(Context context, long itemId) {
+        context.startActivity(Session.isLoggedIn(context) ? intent(context, itemId)
+                : new Intent(context, AuthActivity.class).putExtra("relogin", true));
+    }
 
     public static Intent intent(Context context, long itemId) {
         return new Intent(context, ApplyActivity.class).putExtra(EXTRA_ID, itemId);
@@ -40,6 +59,14 @@ public class ApplyActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if (!Session.isLoggedIn(this)) { open(this, getIntent().getLongExtra(EXTRA_ID, 0)); finish(); return; }
+        accountId = Session.userId(this); itemId = getIntent().getLongExtra(EXTRA_ID, 0);
+        baseDay = Calendar.getInstance(TimeZone.getTimeZone("Asia/Shanghai"));
+        baseDay.set(Calendar.HOUR_OF_DAY, 0); baseDay.set(Calendar.MINUTE, 0); baseDay.set(Calendar.SECOND, 0); baseDay.set(Calendar.MILLISECOND, 0);
+        if (savedInstanceState != null) { baseDay.setTimeInMillis(savedInstanceState.getLong("base_day", baseDay.getTimeInMillis()));
+            dayIndex = savedInstanceState.getInt("day_index", 3); time = savedInstanceState.getString("time", "18:00"); }
+        try { pending = new Gson().fromJson(prefs().getString(Long.toString(itemId), null), BorrowData.Create.class); }
+        catch (RuntimeException exception) { prefs().edit().remove(Long.toString(itemId)).apply(); }
         EdgeToEdge.enable(this);
         binding = ActivityApplyBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
@@ -48,13 +75,19 @@ public class ApplyActivity extends AppCompatActivity {
         Ui.back(this, binding.top.back);
         binding.top.title.setText(R.string.apply_title);
 
-        Item item = SampleData.item(getIntent().getLongExtra(EXTRA_ID, SampleData.DEMO_ITEM_ID));
-        Ui.thumb(binding.thumb, item, 18, 0.2f);
-        binding.title.setText(item.title);
-        binding.tags.addView(Ui.tag(this, item.pickupLabel));
-        TextView dist = new TextView(this, null, 0, R.style.T_Sub);
-        dist.setText(getString(R.string.distance_m, item.distanceM));
-        binding.tags.addView(dist);
+        binding.submit.setEnabled(false);
+        retryHint = Ui.message(this, getString(R.string.borrow_pending_retry), this::resetPending);
+        binding.content.addView(retryHint, 0);
+        retryHint.setVisibility(pending == null ? android.view.View.GONE : android.view.View.VISIBLE);
+        if (pending != null) { binding.note.setText(pending.note); binding.note.setEnabled(false); }
+        var call = ApiClient.authenticated(this).item(itemId); active = call;
+        call.enqueue(new ApiCallback<>(this, item -> {
+            Ui.thumb(binding.thumb, item, 18, 0); binding.itemTitle.setText(item.title);
+            binding.tags.addView(Ui.tag(this, item.pickupLabel));
+            boolean available = !item.isMine && "AVAILABLE".equals(item.status);
+            binding.submit.setEnabled(available || pending != null);
+            if (!available && pending == null) { Toast.makeText(this, R.string.borrow_item_unavailable, Toast.LENGTH_LONG).show(); }
+        }, message -> { binding.submit.setEnabled(pending != null); error(message); }, () -> { }));
 
         renderDays();
         renderTimes();
@@ -68,15 +101,12 @@ public class ApplyActivity extends AppCompatActivity {
         binding.note.addTextChangedListener(counter);
         counter.afterTextChanged(binding.note.getText());
 
-        binding.submit.setOnClickListener(v -> LoadingDialog.run(this, R.string.loading_apply, () -> {
-            startActivity(OrderDetailActivity.intent(this, 1024));
-            finish();
-        }));
+        binding.submit.setOnClickListener(v -> submit());
         Motion.stagger(binding.content, 140);
     }
 
     private void renderDays() {
-        Calendar cal = Calendar.getInstance();
+        Calendar cal = (Calendar) baseDay.clone();
         binding.dayRow.removeAllViews();
         for (int i = 0; i < 5; i++) {
             String top = i == 0 ? getString(R.string.day_today) : i == 1 ? getString(R.string.day_tomorrow)
@@ -103,6 +133,7 @@ public class ApplyActivity extends AppCompatActivity {
             a.setTextColor(ContextCompat.getColor(this, on ? R.color.olive_deep : R.color.ink));
             final int index = i;
             cell.setOnClickListener(v -> {
+                if (pending != null || submitting) { return; }
                 dayIndex = index;
                 renderDays();
                 Motion.bounce(binding.dayRow.getChildAt(index));
@@ -124,6 +155,7 @@ public class ApplyActivity extends AppCompatActivity {
             chip.setText(t);
             chip.setSelected(t.equals(time));
             chip.setOnClickListener(v -> {
+                if (pending != null || submitting) { return; }
                 time = t;
                 renderTimes();
                 updateSummary();
@@ -135,12 +167,56 @@ public class ApplyActivity extends AppCompatActivity {
         TextView other = new TextView(this, null, 0, R.style.Chip);
         other.setText(R.string.apply_other_time);
         other.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_clock_small, 0, 0, 0);
-        other.setOnClickListener(v -> Ui.comingSoon(this));
+        other.setOnClickListener(v -> {
+            if (pending != null || submitting) { return; }
+            new android.app.TimePickerDialog(this, (picker, hour, minute) -> {
+                time = String.format(Locale.ROOT, "%02d:%02d", hour, minute); renderTimes(); updateSummary();
+            }, 18, 0, true).show();
+        });
         binding.timeRow.addView(other);
     }
 
     private void updateSummary() {
+        if (pending != null) { binding.dueSummary.setText(Ui.date(pending.dueAt) + " UTC"); return; }
         String days = dayIndex == 0 ? "<1" : String.valueOf(dayIndex);
         binding.dueSummary.setText(getString(R.string.apply_summary, days, dayLabels[dayIndex], time));
     }
+
+    private android.content.SharedPreferences prefs() { return getSharedPreferences("borrow_pending_" + accountId, MODE_PRIVATE); }
+    private void submit() {
+        if (submitting) { return; }
+        if (Session.userId(this) != accountId || !Session.isLoggedIn(this)) { error(getString(R.string.auth_login_needed)); return; }
+        if (pending == null) {
+            Calendar due = (Calendar) baseDay.clone(); due.add(Calendar.DAY_OF_MONTH, dayIndex);
+            String[] parts = time.split(":"); due.set(Calendar.HOUR_OF_DAY, Integer.parseInt(parts[0])); due.set(Calendar.MINUTE, Integer.parseInt(parts[1]));
+            if (due.getTimeInMillis() <= System.currentTimeMillis()) { error(getString(R.string.borrow_past_due)); return; }
+            pending = new BorrowData.Create(); pending.itemId = itemId; pending.requestId = UUID.randomUUID().toString();
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT); format.setTimeZone(TimeZone.getTimeZone("UTC"));
+            pending.dueAt = format.format(due.getTime()); pending.note = binding.note.getText().toString();
+            prefs().edit().putString(Long.toString(itemId), new Gson().toJson(pending)).apply();
+        }
+        submitting = true; binding.submit.setEnabled(false); binding.note.setEnabled(false);
+        retryHint.setVisibility(android.view.View.VISIBLE);
+        var call = ApiClient.authenticated(this).borrow(pending); active = call;
+        call.enqueue(new ApiCallback<>(this, order -> {
+            prefs().edit().remove(Long.toString(itemId)).apply();
+            startActivity(OrderDetailActivity.intent(this, order.id)); finish();
+        }, this::error, () -> { submitting = false; binding.submit.setEnabled(true); }));
+    }
+    private void resetPending() {
+        if (submitting) { return; }
+        new MaterialAlertDialogBuilder(this).setTitle(R.string.borrow_reset_title).setMessage(R.string.borrow_reset_message)
+                .setNegativeButton(R.string.order_view, (d, w) -> startActivity(com.linlijiewu.app.ui.main.HomeActivity.intent(this,
+                        com.linlijiewu.app.ui.main.HomeActivity.TAB_ORDERS)))
+                .setPositiveButton(R.string.borrow_reset, (d, w) -> {
+                    pending = null; prefs().edit().remove(Long.toString(itemId)).apply(); retryHint.setVisibility(android.view.View.GONE);
+                    binding.note.setEnabled(true); updateSummary();
+                }).show();
+    }
+    private void error(String message) { Toast.makeText(this, message, Toast.LENGTH_LONG).show(); }
+    @Override protected void onSaveInstanceState(Bundle out) {
+        super.onSaveInstanceState(out); if (baseDay != null) { out.putLong("base_day", baseDay.getTimeInMillis()); }
+        out.putInt("day_index", dayIndex); out.putString("time", time);
+    }
+    @Override protected void onDestroy() { if (active != null) { active.cancel(); } super.onDestroy(); }
 }

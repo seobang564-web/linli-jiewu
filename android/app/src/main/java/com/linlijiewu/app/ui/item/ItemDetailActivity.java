@@ -21,7 +21,7 @@ import com.linlijiewu.app.ui.auth.AuthActivity;
 import com.linlijiewu.app.ui.publish.PublishActivity;
 import retrofit2.Call;
 
-/** Real item details; borrowing and chat remain scheduled for later weeks. */
+/** Real item details and entry to the borrowing flow. */
 public class ItemDetailActivity extends AppCompatActivity {
     private static final String EXTRA_ID = "item_id";
     private ActivityItemDetailBinding binding;
@@ -82,7 +82,7 @@ public class ItemDetailActivity extends AppCompatActivity {
         binding.contact.setOnClickListener(v -> { if (item.isMine) { menu(); } else { later(R.string.week2_chat_later); } });
         boolean available = !item.isMine && status == ItemStatus.AVAILABLE;
         binding.apply.setEnabled(available); binding.apply.setAlpha(available ? 1f : 0.45f);
-        binding.apply.setOnClickListener(v -> later(R.string.week2_borrow_later));
+        binding.apply.setOnClickListener(v -> ApplyActivity.open(this, item.id));
         Motion.stagger(binding.content, 80);
     }
     private void later(int message) {

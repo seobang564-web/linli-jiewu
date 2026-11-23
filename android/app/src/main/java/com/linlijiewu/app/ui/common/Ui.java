@@ -97,4 +97,43 @@ public final class Ui {
     public static void back(androidx.activity.ComponentActivity activity, View button) {
         button.setOnClickListener(v -> activity.getOnBackPressedDispatcher().onBackPressed());
     }
+
+    public static void thumb(ImageView view, com.linlijiewu.app.data.remote.ItemData item, float radiusDp, float paddingRatio) {
+        Context c = view.getContext();
+        com.linlijiewu.app.data.model.Category category = category(item.category);
+        GradientDrawable bg = new GradientDrawable();
+        bg.setColor(ContextCompat.getColor(c, com.linlijiewu.app.R.color.tone_olive));
+        bg.setCornerRadius(dp(c, radiusDp)); view.setBackground(bg); view.setClipToOutline(true); view.setPadding(0, 0, 0, 0);
+        view.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        com.bumptech.glide.Glide.with(view).load(com.linlijiewu.app.data.remote.FileUrls.resolve(
+                com.linlijiewu.app.BuildConfig.SERVER_BASE_URL, item.coverUrl))
+                .placeholder(category.illustration).error(category.illustration).into(view);
+    }
+
+    public static com.linlijiewu.app.data.model.Category category(String value) {
+        try { return com.linlijiewu.app.data.model.Category.valueOf(value); }
+        catch (IllegalArgumentException | NullPointerException exception) { return com.linlijiewu.app.data.model.Category.OTHER; }
+    }
+
+    public static String date(String value) { return value == null ? "" : value.replace('T', ' ').substring(0, Math.min(16, value.length())); }
+
+    public static int borrowActionLabel(String action) {
+        switch (action) {
+            case "accept": return R.string.action_accept;
+            case "reject": return R.string.action_reject;
+            case "cancel": return R.string.action_cancel;
+            case "handover": return R.string.action_handover;
+            case "return": return R.string.action_return;
+            case "confirm-return": return R.string.action_confirm_return;
+            case "deny-return": return R.string.action_deny_return;
+            default: return R.string.order_view;
+        }
+    }
+
+    public static TextView message(Context c, CharSequence message, Runnable retry) {
+        TextView text = new TextView(c, null, 0, R.style.T_Body);
+        text.setText(message); int pad = dp(c, 18); text.setPadding(pad, pad, pad, pad);
+        if (retry != null) { text.setOnClickListener(v -> retry.run()); }
+        return text;
+    }
 }
