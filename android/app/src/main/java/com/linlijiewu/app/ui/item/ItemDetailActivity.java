@@ -4,6 +4,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Toast;
+import com.amap.api.maps.model.LatLng;
+import com.linlijiewu.app.util.AmapPrivacy;
+import com.linlijiewu.app.util.MapNavigator;
+import com.linlijiewu.app.util.PlaceSearch;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -23,6 +27,7 @@ import retrofit2.Call;
 
 /** Real item details and entry to the borrowing flow. */
 public class ItemDetailActivity extends AppCompatActivity {
+    private PlaceSearch places;
     private static final String EXTRA_ID = "item_id";
     private ActivityItemDetailBinding binding;
     private long id;
@@ -76,7 +81,8 @@ public class ItemDetailActivity extends AppCompatActivity {
         String nick = item.owner == null || item.owner.nickname == null ? "" : item.owner.nickname;
         binding.ownerAvatar.setText(nick.isEmpty() ? "" : nick.substring(0, 1)); binding.ownerName.setText(nick);
         binding.ownerMeta.setText(getString(R.string.item_created, item.createdAt == null ? "" : item.createdAt.substring(0, Math.min(10, item.createdAt.length()))));
-        binding.navigate.setOnClickListener(v -> Ui.comingSoon(this));
+        binding.navigate.setOnClickListener(v -> MapNavigator.walkTo(this, item.pickupLat, item.pickupLng, item.pickupLabel));
+        resolveAddress(item.pickupLat, item.pickupLng);
         binding.ownerRow.setOnClickListener(v -> later(R.string.week2_chat_later));
         binding.contact.setEnabled(true); binding.contact.setText(item.isMine ? R.string.item_manage : R.string.detail_chat);
         binding.contact.setOnClickListener(v -> { if (item.isMine) { menu(); } else { later(R.string.week2_chat_later); } });
@@ -84,6 +90,16 @@ public class ItemDetailActivity extends AppCompatActivity {
         binding.apply.setEnabled(available); binding.apply.setAlpha(available ? 1f : 0.45f);
         binding.apply.setOnClickListener(v -> ApplyActivity.open(this, item.id));
         Motion.stagger(binding.content, 80);
+    }
+    /** 交接点坐标反查成地址；未同意地图隐私政策或查询失败时保留坐标显示。 */
+    private void resolveAddress(double lat, double lng) {
+        if (!AmapPrivacy.isAgreed(this)) { return; }
+        if (places == null) { places = new PlaceSearch(this); }
+        places.reverse(new LatLng(lat, lng), 100, (result, code) -> {
+            if (isDestroyed() || item == null || item.pickupLat != lat || item.pickupLng != lng
+                    || result == null || result.formatted == null || result.formatted.isEmpty()) { return; }
+            binding.pickupAddress.setText(result.formatted);
+        });
     }
     private void later(int message) {
         if (!Session.isLoggedIn(this)) {
@@ -120,6 +136,7 @@ public class ItemDetailActivity extends AppCompatActivity {
         Snackbar.make(binding.getRoot(), message, Snackbar.LENGTH_INDEFINITE).setAction(R.string.item_retry, v -> load()).show();
     }
     @Override protected void onDestroy() {
+        if (places != null) { places.cancel(); }
         if (activeCall != null) { activeCall.cancel(); }
         if (loading != null) { loading.dismiss(); }
         super.onDestroy();
