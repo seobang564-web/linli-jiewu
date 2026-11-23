@@ -10,6 +10,10 @@ import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.amap.api.maps.model.LatLng;
+import com.linlijiewu.app.util.AmapPrivacy;
+import com.linlijiewu.app.util.MapNavigator;
+import com.linlijiewu.app.util.PlaceSearch;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -32,6 +36,7 @@ import com.linlijiewu.app.ui.common.Ui;
  * 仅渲染真实接口与按当前身份可执行的状态操作。
  */
 public class OrderDetailActivity extends AppCompatActivity {
+    private PlaceSearch places;
     private static final String EXTRA_ID = "order_id";
     private static final BorrowStatus[] STEPS = {BorrowStatus.PENDING, BorrowStatus.ACCEPTED,
             BorrowStatus.BORROWING, BorrowStatus.RETURNING, BorrowStatus.COMPLETED};
@@ -61,6 +66,9 @@ public class OrderDetailActivity extends AppCompatActivity {
         id = getIntent().getLongExtra(EXTRA_ID, 0);
         binding.contactOwner.setVisibility(View.GONE);
         binding.call.setVisibility(View.GONE); binding.navigate.setVisibility(View.GONE);
+        binding.navigate.setOnClickListener(v -> {
+            if (order != null && order.item != null) { MapNavigator.walkTo(this, order.item.pickupLat, order.item.pickupLng, order.item.pickupLabel); }
+        });
         binding.copyContact.setOnClickListener(v -> {
             ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
             cm.setPrimaryClip(ClipData.newPlainText("contact", binding.contactValue.getText()));
@@ -82,6 +90,16 @@ public class OrderDetailActivity extends AppCompatActivity {
         var call = ApiClient.authenticated(this).borrow(id); detailCall = call;
         call.enqueue(new ApiCallback<>(this, value -> { if (query == sequence) { render(value); loadLogs(query); } }, this::error, () -> { }));
     }
+    /** 交接点坐标反查成地址；未同意地图隐私政策或查询失败时保留坐标显示。 */
+    private void resolveAddress(double lat, double lng) {
+        if (!AmapPrivacy.isAgreed(this)) { return; }
+        if (places == null) { places = new PlaceSearch(this); }
+        places.reverse(new LatLng(lat, lng), 100, (result, code) -> {
+            if (isDestroyed() || order == null || order.item == null || order.item.pickupLat != lat || order.item.pickupLng != lng
+                    || result == null || result.formatted == null || result.formatted.isEmpty()) { return; }
+            binding.pickupAddress.setText(result.formatted);
+        });
+    }
     private void render(BorrowData value) {
         order = value;
         BorrowStatus status = BorrowStatus.valueOf(order.status);
@@ -102,6 +120,8 @@ public class OrderDetailActivity extends AppCompatActivity {
         binding.stepFill.setVisibility(status == BorrowStatus.CANCELLED ? View.GONE : View.VISIBLE);
         binding.pickupLabel.setText(order.item.pickupLabel);
         binding.pickupAddress.setText(getString(R.string.item_coordinates, order.item.pickupLat, order.item.pickupLng));
+        binding.navigate.setVisibility(View.VISIBLE);
+        resolveAddress(order.item.pickupLat, order.item.pickupLng);
         BorrowData.Person peer = order.owner.id == Session.userId(this) ? order.borrower : order.owner;
         binding.contactLabel.setText(order.owner.id == Session.userId(this) ? R.string.order_contact_borrower : R.string.order_contact_owner);
         boolean visible = !"PENDING".equals(order.status) && !"CANCELLED".equals(order.status);
@@ -159,6 +179,7 @@ public class OrderDetailActivity extends AppCompatActivity {
     }
     private void error(String message) { Toast.makeText(this, message, Toast.LENGTH_LONG).show(); }
     @Override protected void onDestroy() {
+        if (places != null) { places.cancel(); }
         sequence++; if (detailCall != null) { detailCall.cancel(); } if (logCall != null) { logCall.cancel(); }
         if (actionCall != null) { actionCall.cancel(); } super.onDestroy();
     }

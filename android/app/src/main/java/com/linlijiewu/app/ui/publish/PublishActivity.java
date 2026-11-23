@@ -100,7 +100,7 @@ public class PublishActivity extends AppCompatActivity {
         if (photoFile().isFile()) { previewPhoto(); }
         binding.photo.setOnClickListener(v -> photoLauncher.launch(new PickVisualMediaRequest.Builder()
                 .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly.INSTANCE).build()));
-        binding.pickupRow.setOnClickListener(v -> pickupLauncher.launch(new Intent(this, PickupActivity.class)));
+        binding.pickupRow.setOnClickListener(v -> pickupLauncher.launch(PickupActivity.pickup(this, pickupLat, pickupLng, pickupLabel)));
         binding.saveDraft.setEnabled(editId == 0);
         binding.saveDraft.setOnClickListener(v -> {
             saveDraft(); Toast.makeText(this, R.string.publish_draft_toast, Toast.LENGTH_SHORT).show();

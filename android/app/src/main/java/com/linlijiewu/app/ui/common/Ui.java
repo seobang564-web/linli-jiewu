@@ -49,6 +49,12 @@ public final class Ui {
         view.setTextColor(ContextCompat.getColor(view.getContext(), status.textColor));
     }
 
+    /** 纯文本距离：“距离 120m” / “距离 1.2km”。 */
+    public static String distanceText(Context c, int meters) {
+        String value = meters < 1000 ? c.getString(R.string.distance_m, meters) : c.getString(R.string.distance_km, meters / 1000f);
+        return c.getString(R.string.pickup_distance_text, value);
+    }
+
     /** “486m” 这类距离：数字大、单位小。 */
     public static CharSequence distance(Context c, int meters, int numberSp) {
         String number = meters < 1000 ? String.valueOf(meters) : String.format(java.util.Locale.ROOT, "%.1f", meters / 1000f);

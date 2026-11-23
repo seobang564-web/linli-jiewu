@@ -1,6 +1,8 @@
 package com.linlijiewu.app.ui.discover;
 
 import android.Manifest;
+import android.app.Activity;
+import android.graphics.Point;
 import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -51,15 +53,21 @@ import com.linlijiewu.app.ui.common.LoadingDialog;
 import com.linlijiewu.app.ui.common.Motion;
 import com.linlijiewu.app.ui.common.Ui;
 import com.linlijiewu.app.ui.item.ItemDetailActivity;
+import com.linlijiewu.app.ui.publish.PickupActivity;
 import com.linlijiewu.app.ui.publish.PublishActivity;
 import com.linlijiewu.app.util.AmapPrivacy;
+import com.linlijiewu.app.util.PlaceSearch;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 发现页：高德地图 + 当前位置 + 附近物品。
  * 地图流程不变：隐私合规弹窗 → 创建 MapView → 申请定位权限 → 持续定位，首次成功时把视角移到当前位置。
  * 物品来自真实附近检索接口，标记使用物品交接点坐标。
+ * 地图与列表联动：点标记或列表行先选中（标记显示名称、地图移到可见区域、列表行高亮），再点一次进入详情。
+ * “切换”可改为在地图任意位置附近检索，定位按钮回到当前位置。
  */
 public class DiscoverFragment extends Fragment {
     private static final String KEY_MAP_STATE = "map_state";
@@ -88,6 +96,26 @@ public class DiscoverFragment extends Fragment {
     private long total;
     private int querySequence;
     private Call<?> searchCall;
+    /** 最近一次真实定位（或调试固定坐标），用于从自选位置回到当前位置。 */
+    @Nullable private LatLng gpsCenter;
+    /** 非空表示正在自选位置附近检索。 */
+    @Nullable private String customLabel;
+    private long selectedId = -1;
+    private final Map<Long, Marker> markerById = new HashMap<>();
+    private PlaceSearch placeSearch;
+
+    private final ActivityResultLauncher<Intent> placeLauncher =
+            registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
+                Intent data = result.getData();
+                if (binding == null || result.getResultCode() != Activity.RESULT_OK || data == null
+                        || !data.hasExtra(PickupActivity.EXTRA_LAT)) {
+                    return;
+                }
+                LatLng chosen = new LatLng(data.getDoubleExtra(PickupActivity.EXTRA_LAT, 0),
+                        data.getDoubleExtra(PickupActivity.EXTRA_LNG, 0));
+                String label = data.getStringExtra(PickupActivity.EXTRA_LABEL);
+                useCustomCenter(chosen, label == null ? getString(R.string.pickup_center_default) : label);
+            });
 
     private final ActivityResultLauncher<String[]> permissionLauncher =
             registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
@@ -128,7 +156,8 @@ public class DiscoverFragment extends Fragment {
         binding.searchBar.setOnClickListener(v -> startActivity(new Intent(requireContext(), BrowseActivity.class)));
         binding.goBorrow.setOnClickListener(v -> startActivity(new Intent(requireContext(), BrowseActivity.class)));
         binding.goLend.setOnClickListener(v -> PublishActivity.open(requireActivity()));
-        binding.switchPlace.setOnClickListener(v -> Ui.comingSoon(requireContext()));
+        binding.switchPlace.setOnClickListener(v -> switchPlace());
+        placeSearch = new PlaceSearch(requireContext());
 
         if (AmapPrivacy.isAgreed(requireContext())) {
             initMap(savedInstanceState == null ? null : savedInstanceState.getBundle(KEY_MAP_STATE));
@@ -226,9 +255,10 @@ public class DiscoverFragment extends Fragment {
                     : getString(R.string.nearby_empty), this::reloadItems));
         }
         LayoutInflater inflater = getLayoutInflater();
-        for (int i = 0; i < Math.min(items.size(), 6); i++) {
+        for (int i = 0; i < items.size(); i++) {
             ItemData item = items.get(i);
             ItemNearbyBinding row = ItemNearbyBinding.inflate(inflater, binding.nearbyList, false);
+            boolean on = item.id == selectedId;
             Ui.thumb(row.thumb, item, 18, 0.2f);
             row.title.setText(item.title);
             row.tags.addView(Ui.tag(requireContext(), item.pickupLabel));
@@ -237,8 +267,15 @@ public class DiscoverFragment extends Fragment {
                 Ui.statusPill(pill, ItemStatus.valueOf(item.status));
                 row.tags.addView(pill);
             }
-            row.distance.setText(Ui.distance(requireContext(), item.distanceM, 20));
-            row.getRoot().setOnClickListener(v -> openItem(item));
+            if (on) {
+                row.getRoot().setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.olive_soft));
+                row.distance.setText(R.string.nearby_open_detail);
+                row.distance.setTextColor(ContextCompat.getColor(requireContext(), R.color.olive_deep));
+            } else {
+                row.distance.setText(Ui.distance(requireContext(), item.distanceM, 20));
+            }
+            row.getRoot().setTag(item.id);
+            row.getRoot().setOnClickListener(v -> select(item, false));
             binding.nearbyList.addView(row.getRoot());
         }
         if (!items.isEmpty()) {
@@ -252,13 +289,14 @@ public class DiscoverFragment extends Fragment {
         SearchLocation.save(requireContext(), center.latitude, center.longitude, radius);
         int sequence = ++querySequence;
         if (searchCall != null) { searchCall.cancel(); }
-        items.clear(); total = 0; renderList(); placeMarkers();
+        items.clear(); total = 0; selectedId = -1; renderList(); placeMarkers();
         binding.summary.setText(R.string.nearby_loading);
         var call = ApiClient.authenticated(requireContext()).nearby(center.latitude, center.longitude, radius, null, null, 1, 50);
         searchCall = call;
         call.enqueue(new ApiCallback<>(requireActivity(), data -> {
             if (binding == null || sequence != querySequence) { return; }
             items.clear(); if (data.list != null) { items.addAll(data.list); } total = data.total;
+            binding.summary.setOnClickListener(null);
             renderList(); placeMarkers();
         }, message -> {
             if (binding == null || sequence != querySequence) { return; }
@@ -316,11 +354,12 @@ public class DiscoverFragment extends Fragment {
         map.setOnMarkerClickListener(marker -> {
             Object tag = marker.getObject();
             if (tag instanceof ItemData) {
-                openItem((ItemData) tag);
+                select((ItemData) tag, true);
                 return true;
             }
             return false;
         });
+        map.setOnMapClickListener(latLng -> clearSelection());
         showState(State.LOCATING, null);
         requestLocation();
     }
@@ -372,9 +411,12 @@ public class DiscoverFragment extends Fragment {
         map.setMyLocationEnabled(false);
         map.addMarker(new MarkerOptions().position(mock).title(getString(R.string.location_mock_marker))
                 .icon(BitmapDescriptorFactory.fromView(myLocationDot())).anchor(0.5f, 0.5f));
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(mock, zoomFor(radius)));
+        gpsCenter = mock;
         hasCentered = true;
-        onCenterKnown(mock);
+        if (customLabel == null) {
+            map.moveCamera(CameraUpdateFactory.newLatLngZoom(mock, zoomFor(radius)));
+            onCenterKnown(mock);
+        }
         showState(State.LOCATED, null);
     }
 
@@ -395,11 +437,14 @@ public class DiscoverFragment extends Fragment {
         int errorCode = extras == null ? -1 : extras.getInt("errorCode", -1);
         if (errorCode == 0 && (location.getLatitude() != 0 || location.getLongitude() != 0)) {
             // 高德返回 GCJ-02 坐标，与接口约定一致，可直接作为检索中心
+            LatLng here = new LatLng(location.getLatitude(), location.getLongitude());
+            gpsCenter = here;
             if (!hasCentered) {
                 hasCentered = true;
-                LatLng here = new LatLng(location.getLatitude(), location.getLongitude());
-                map.animateCamera(CameraUpdateFactory.newLatLngZoom(here, zoomFor(radius)));
-                onCenterKnown(here);
+                if (customLabel == null) {
+                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(here, zoomFor(radius)));
+                    onCenterKnown(here);
+                }
             }
             if (state != State.LOCATED) {
                 showState(State.LOCATED, null);
@@ -420,6 +465,130 @@ public class DiscoverFragment extends Fragment {
         radiusCircle = map.addCircle(new CircleOptions().center(here).radius(radius)
                 .fillColor(0x126A8A14).strokeColor(0xB06A8A14).strokeWidth(Ui.dp(requireContext(), 1.5f)));
         reloadItems();
+        updatePlaceTitle();
+    }
+
+    // ---------------------------------------------------------------- 检索中心
+
+    private void switchPlace() {
+        if (map == null) {
+            showPrivacyDialog();
+            return;
+        }
+        placeLauncher.launch(PickupActivity.searchCenter(requireContext(), center));
+    }
+
+    /** 在自选位置附近检索：不再跟随定位，直到点定位按钮。 */
+    private void useCustomCenter(LatLng chosen, String label) {
+        customLabel = label;
+        if (map == null) {
+            return;
+        }
+        hasCentered = true;
+        map.animateCamera(CameraUpdateFactory.newLatLngZoom(chosen, zoomFor(radius)), 500, null);
+        onCenterKnown(chosen);
+    }
+
+    private void updatePlaceTitle() {
+        if (binding == null || center == null) {
+            return;
+        }
+        if (customLabel != null) {
+            binding.placeTitle.setText(getString(R.string.place_custom, customLabel));
+            return;
+        }
+        binding.placeTitle.setText(R.string.place_current);
+        LatLng at = center;
+        placeSearch.reverse(at, 200, (result, code) -> {
+            if (binding == null || customLabel != null || at != center || result == null
+                    || result.shortName == null || result.shortName.isEmpty()) {
+                return;
+            }
+            binding.placeTitle.setText(getString(R.string.place_near, result.shortName));
+        });
+    }
+
+    // ---------------------------------------------------------------- 地图与列表联动
+
+    /** 第一次点选中并在地图上定位；再点同一件进入详情。 */
+    private void select(ItemData item, boolean fromMap) {
+        if (item.id == selectedId) {
+            openItem(item);
+            return;
+        }
+        long previous = selectedId;
+        selectedId = item.id;
+        refreshPin(previous);
+        if (previous < 0 && !items.isEmpty()) {
+            refreshPin(items.get(0).id); // 收起最近一件的默认名称
+        }
+        refreshPin(item.id);
+        renderList();
+        BottomSheetBehavior<View> behavior = BottomSheetBehavior.from(binding.sheet);
+        if (behavior.getState() != BottomSheetBehavior.STATE_COLLAPSED) {
+            behavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        }
+        focus(new LatLng(item.pickupLat, item.pickupLng));
+        Marker marker = markerById.get(item.id);
+        if (marker != null && Motion.enabled(requireContext())) {
+            ScaleAnimation pop = new ScaleAnimation(0.7f, 1f, 0.7f, 1f);
+            pop.setDuration(360);
+            pop.setInterpolator(Motion.spring(requireContext()));
+            marker.setAnimation(pop);
+            marker.startAnimation();
+        }
+        if (fromMap) {
+            scrollToRow(item.id);
+        }
+    }
+
+    private void clearSelection() {
+        if (selectedId < 0) {
+            return;
+        }
+        long previous = selectedId;
+        selectedId = -1;
+        refreshPin(previous);
+        if (!items.isEmpty()) {
+            refreshPin(items.get(0).id);
+        }
+        renderList();
+    }
+
+    /** 把点移到顶部搜索栏与底部面板之间可见区域的中间，而不是被面板挡住的屏幕正中。 */
+    private void focus(LatLng pos) {
+        if (map == null || mapView == null) {
+            return;
+        }
+        int w = mapView.getWidth();
+        int h = mapView.getHeight();
+        if (w == 0 || h == 0) {
+            map.animateCamera(CameraUpdateFactory.newLatLng(pos), 400, null);
+            return;
+        }
+        int top = binding.topOverlay.getBottom();
+        int bottom = h - BottomSheetBehavior.from(binding.sheet).getPeekHeight();
+        int targetY = bottom - top > h / 5 ? (top + bottom) / 2 : h / 3;
+        Point p = map.getProjection().toScreenLocation(pos);
+        Point camera = new Point(p.x, h / 2 + (p.y - targetY));
+        map.animateCamera(CameraUpdateFactory.newLatLng(map.getProjection().fromScreenLocation(camera)), 400, null);
+    }
+
+    private void scrollToRow(long id) {
+        binding.nearbyList.post(() -> {
+            if (binding == null) {
+                return;
+            }
+            for (int i = 0; i < binding.nearbyList.getChildCount(); i++) {
+                View row = binding.nearbyList.getChildAt(i);
+                if (Long.valueOf(id).equals(row.getTag())) {
+                    int y = binding.sheetContent.getTop() + binding.nearbyList.getTop() + row.getTop()
+                            - Ui.dp(requireContext(), 96);
+                    binding.sheet.smoothScrollTo(0, Math.max(0, y));
+                    return;
+                }
+            }
+        });
     }
 
     /** 在当前位置周围摆放半径内的物品标记，依次弹出。 */
@@ -429,22 +598,14 @@ public class DiscoverFragment extends Fragment {
             m.remove();
         }
         markers.clear();
-        LayoutInflater inflater = getLayoutInflater();
+        markerById.clear();
         for (int i = 0; i < items.size(); i++) {
             ItemData item = items.get(i);
-            ViewMapPinBinding pin = ViewMapPinBinding.inflate(inflater);
-            pin.pinIcon.setImageResource(Ui.category(item.category).pinIcon);
-            if (!"AVAILABLE".equals(item.status)) {
-                pin.pinBody.setBackgroundResource(R.drawable.bg_pin_gray);
-            }
-            if (i == 0) {
-                pin.pinLabel.setVisibility(View.VISIBLE);
-                pin.pinLabel.setText(item.title.substring(0, Math.min(4, item.title.length())) + " · " + item.distanceM + "m");
-            }
             LatLng pos = new LatLng(item.pickupLat, item.pickupLng);
             Marker marker = map.addMarker(new MarkerOptions().position(pos).anchor(0.5f, 1f)
-                    .icon(BitmapDescriptorFactory.fromView(pin.getRoot())));
+                    .icon(BitmapDescriptorFactory.fromView(pinView(item, i == 0))));
             marker.setObject(item);
+            markerById.put(item.id, marker);
             if (Motion.enabled(requireContext())) {
                 ScaleAnimation drop = new ScaleAnimation(0f, 1f, 0f, 1f);
                 drop.setDuration(520 + i * 70L);
@@ -456,8 +617,46 @@ public class DiscoverFragment extends Fragment {
         }
     }
 
+    /** 选中的标记显示名称并置顶；没有选中时最近的一件显示名称。 */
+    private View pinView(ItemData item, boolean nearest) {
+        ViewMapPinBinding pin = ViewMapPinBinding.inflate(getLayoutInflater());
+        pin.pinIcon.setImageResource(Ui.category(item.category).pinIcon);
+        if (!"AVAILABLE".equals(item.status)) {
+            pin.pinBody.setBackgroundResource(R.drawable.bg_pin_gray);
+        }
+        boolean on = item.id == selectedId;
+        if (on || (selectedId < 0 && nearest)) {
+            pin.pinLabel.setVisibility(View.VISIBLE);
+            String title = on ? item.title : item.title.substring(0, Math.min(4, item.title.length()));
+            pin.pinLabel.setText(getString(R.string.pin_label, title, item.distanceM));
+        }
+        if (on) {
+            pin.pinBody.setScaleX(1.15f);
+            pin.pinBody.setScaleY(1.15f);
+        }
+        return pin.getRoot();
+    }
+
+    private void refreshPin(long id) {
+        Marker marker = markerById.get(id);
+        if (marker == null || !(marker.getObject() instanceof ItemData)) {
+            return;
+        }
+        ItemData item = (ItemData) marker.getObject();
+        boolean nearest = !items.isEmpty() && items.get(0).id == id;
+        marker.setIcon(BitmapDescriptorFactory.fromView(pinView(item, nearest)));
+        marker.setZIndex(id == selectedId ? 10f : 0f);
+    }
+
     private void recenter() {
         Motion.bounce(binding.locateButton);
+        if (customLabel != null && map != null && gpsCenter != null) {
+            // 从自选位置回到当前位置
+            customLabel = null;
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(gpsCenter, zoomFor(radius)), 500, null);
+            onCenterKnown(gpsCenter);
+            return;
+        }
         if (map != null && center != null) {
             map.animateCamera(CameraUpdateFactory.newLatLngZoom(center, zoomFor(radius)), 500, null);
         } else if (map != null) {
@@ -578,6 +777,8 @@ public class DiscoverFragment extends Fragment {
             map = null;
         }
         markers.clear();
+        markerById.clear();
+        if (placeSearch != null) { placeSearch.cancel(); }
         radiusCircle = null;
         binding = null;
         center = null;

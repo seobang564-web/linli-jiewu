@@ -165,7 +165,7 @@
 
     <!-- 交接点 -->
     <string name="pickup_title">选择交接点</string>
-    <string name="pickup_city">昆明市 ›</string>
+    <string name="pickup_city">附近</string>
     <string name="pickup_search_hint">搜索地点</string>
     <string name="pickup_drag_hint">拖动地图选择交接点</string>
     <string name="pickup_coord">%1$.5f, %2$.5f · GCJ-02</string>
